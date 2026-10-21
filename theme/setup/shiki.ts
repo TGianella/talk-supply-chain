@@ -6,7 +6,7 @@ const dossier = {
   name: 'dossier-light',
   type: 'light' as const,
   colors: {
-    'editor.background': '#ffffff',
+    'editor.background': '#f3f6f9', // --hud-code
     'editor.foreground': '#0b2545',
   },
   tokenColors: [

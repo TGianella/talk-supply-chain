@@ -9,6 +9,7 @@
   --hud-muted: #4f6382;
   --hud-faint: #bfcbdb;
   --hud-surface: #ffffff;
+  --hud-code: #f3f6f9; /* code blocks: a shade below the surface, above the slide background */
 
   /* Scene (dark) variant */
   --scene-bg: #121314;
@@ -35,7 +36,7 @@
   --slidev-theme-primary: var(--hud-accent);
   --slidev-slide-container-background: #000; /* outside the slide; each layout paints its own background */
   --slidev-controls-foreground: var(--hud-ink);
-  --slidev-code-background: var(--hud-surface);
+  --slidev-code-background: var(--hud-code);
   --slidev-code-foreground: var(--hud-ink);
   --slidev-code-font-family: var(--hud-font-mono);
   --slidev-code-font-size: 26px;

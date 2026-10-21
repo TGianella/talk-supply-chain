@@ -71,3 +71,14 @@ defineProps<{ title: string }>()
   border: 2px solid var(--hud-surface);
 }
 </style>
+
+<style>
+/* a code block fills the window: no border of its own (the window's covers its edges) and no margin */
+.slidev-layout .app-window .frame .slidev-code-wrapper {
+  margin: 0 !important;
+}
+
+.app-window .frame .slidev-code-wrapper .slidev-code {
+  border: none;
+}
+</style>

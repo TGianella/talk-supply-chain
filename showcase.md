@@ -261,6 +261,73 @@ Composants : <SubjectCard> (prop compact pour une version réduite), <Verdict>.
 -->
 
 ---
+layout: case
+status: Affaire 03
+reveal: 1
+kicker: Affaire 03 · novembre 2018
+subject:
+  header: Pièce 01 · paquet npm
+  flag: ■ Piégé
+  name: event-stream
+  meta: v3.3.6 · sept. 2018
+  fields:
+    - { label: Téléchargements, value: 2 M / semaine }
+    - { label: Mainteneur, value: dominictarr → right9ctrl }
+    - { label: Dépendance piégée, value: flatmap-stream@0.1.1, alert: true }
+modus:
+  - { label: Vecteur, value: Reprise de la maintenance par ingénierie sociale, at: '05.09' }
+  - { label: Charge, value: Code chiffré dans une dépendance indirecte, at: ['09.09', '05.10'] }
+  - { label: Cible, value: Les portefeuilles Bitcoin de l’app Copay, at: '05.10' }
+  - { label: Détection, value: 'Par hasard, après 2 mois et demi', alert: true, at: ['20.11', '26.11'] }
+timeline:
+  - { date: '05.09', label: Accès obtenu }
+  - { date: '09.09', label: Dépendance ajoutée }
+  - { date: '05.10', label: Charge publiée, hot: true }
+  - { date: '20.11', label: Issue n° 116 }
+  - { date: '26.11', label: Retrait }
+---
+
+# event-stream
+
+Un mainteneur épuisé confie son paquet à un inconnu
+
+::window-1::
+
+<AppWindow title="Vecteur">
+  <div class="w-[1000px] h-[480px]" style="background: #dce4ee" />
+</AppWindow>
+
+::window-2::
+
+<AppWindow title="flatmap-stream/index.min.js">
+
+```js
+const key = process.env.npm_package_description
+const code = decrypt(require('./test/data'), key)
+if (code) eval(code)
+```
+
+</AppWindow>
+
+::window-4::
+
+<AppWindow title="Issue n° 116">
+  <div class="w-[1200px] h-[560px]" style="background: var(--hud-muted)" />
+</AppWindow>
+
+<!--
+Layout `case` : une attaque sur une slide. Props : kicker, subject (props de <SubjectCard>, affichée compacte),
+modusLabel (« Mode opératoire » par défaut), modus [{ label, value, alert, at }], timeline [{ date, label, hot }], cols, status, reveal.
+reveal (numéro de clic) : la carte apparaît à ce clic, la frise et le titre de la colonne de droite au suivant ; puis chaque ligne
+de modus est une étape : un clic met en avant ses dates sur la frise (at : une date ou une liste, écrites comme dans timeline,
+entre guillemets), un clic ouvre sa fenêtre (slot ::window-n::, n = rang de la ligne à partir de 1), un clic la ferme et affiche la ligne.
+Sans at ou sans fenêtre, l'étape saute ce clic. Sans reveal, tout est affiché d'emblée.
+Slot par défaut : titre et sous-titre. Slots ::subject:: et ::modus:: : remplacent la carte et la colonne de droite.
+Slot ::windows:: : calque libre au-dessus du corps de la slide pour d'autres fenêtres, empilées au centre, avec des clics absolus
+après les étapes. Ex. <AppWindow v-click="[13, 14]" class="open-center">.
+-->
+
+---
 status: Casier judiciaire
 ---
 

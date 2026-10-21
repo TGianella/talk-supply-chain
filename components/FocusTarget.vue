@@ -2,14 +2,15 @@
 // Target of the highlight morph of a ZoomTimeline (same `morph`), on the slide that details the
 // highlighted event: an invisible box over the slide under the status bar.
 // Arriving on this slide, the highlight frame grows to it and this slide shows within the frame, over
-// the timeline that stays still; leaving, it shrinks back onto the label and uncovers the timeline.
+// the timeline that stays still; leaving, the content of this slide fades out quickly while the frame
+// shrinks back onto the label and uncovers the timeline.
 // Both slides around need `transition: view-transition`.
 // <FocusTarget morph="event-stream" />
 // The transition clips the snapshot of the slide on top to the frame: the frame of the label and the
 // box of this slide are measured, in screen pixels, when the slide changes, while each one is shown
 // (before the slides switch for the one leaving, after for the one coming).
 import { useSlideContext } from '@slidev/client'
-import { computed, ref, watch } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 
 const props = defineProps<{
   morph: string
@@ -49,6 +50,18 @@ watch(current, (on) => {
 })
 // after: measure the one coming
 watch(current, on => on ? slide() : label(), { flush: 'post' })
+
+// Leaving: html.focus-leaving gives each block of content around the title its own view-transition
+// name (styles below), so that it fades out on its own, quickly, out of the snapshot of the slide
+// (which keeps the background and the grid within the shrinking frame). Set in a router guard, which
+// runs before the old state is captured: a class on html, because Slidev may remount the slides between
+// the guard and the capture (when the slideshow container switches to a plain div for the view
+// transition). Removed once the slides switch, after the capture.
+onUnmounted($nav.value.router.beforeEach((to, from) => {
+  if (current.value && to.params.no !== from.params.no)
+    html.classList.add('focus-leaving')
+}))
+watch(current, on => !on && html.classList.remove('focus-leaving'))
 </script>
 
 <template>
@@ -95,6 +108,21 @@ html.focus-collapse::view-transition-new(root) {
 html.focus-collapse::view-transition-old(root) {
   z-index: 1;
   animation: focus-hide 0.8s ease both;
+}
+
+/* leaving: the blocks of the slide body that hold neither this target nor the morphing title, and,
+   inside the one that holds them, its other children */
+html.focus-leaving .hud-body:has(.focus-target) {
+  > :not(.focus-target, :has(.focus-target, [style*='view-transition-name'])),
+  > :has(.focus-target) > :not([style*='view-transition-name'], :has([style*='view-transition-name'])) {
+    view-transition-name: match-element;
+    view-transition-class: focus-content;
+  }
+}
+
+/* shrinking: the content of the slide fades out quickly, where it is */
+::view-transition-old(*.focus-content) {
+  animation-duration: 0.25s;
 }
 
 /* two animations rather than one in reverse, which would reverse the easing too and lag behind the frame */

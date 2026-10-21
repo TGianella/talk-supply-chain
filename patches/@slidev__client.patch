@@ -1,0 +1,15 @@
+diff --git a/composables/useViewTransition.ts b/composables/useViewTransition.ts
+index d7eea924ee6644e3793b251d75b7e851cd3611c8..f0cc0c77817cfb89cb317753f9515fe8c7242c77 100644
+--- a/composables/useViewTransition.ts
++++ b/composables/useViewTransition.ts
+@@ -17,6 +17,10 @@ export function useViewTransition() {
+     const toMeta = getSlide(to.params.no as string)?.meta
+     const fromNo = fromMeta?.slide?.no
+     const toNo = toMeta?.slide?.no
++    // A click within the same slide keeps the current mode: switching it swaps the slideshow
++    // container between a div and a TransitionGroup, which remounts the slide.
++    if (fromNo != null && fromNo === toNo)
++      return
+     const transitionType = fromNo != null && toNo != null && fromNo !== toNo
+       && ((fromNo < toNo ? fromMeta?.transition : toMeta?.transition) ?? configs.transition)
+     if (transitionType !== 'view-transition') {
