@@ -1,0 +1,269 @@
+/* Slide background. The grid itself is drawn by HudFrame.vue, behind the content
+   (isolation keeps its z-index: -1 above this background). */
+.slidev-layout.hud {
+  position: relative;
+  isolation: isolate;
+  height: 100%;
+  padding: 0;
+  overflow: hidden;
+  font-family: var(--hud-font-body);
+  font-size: 32px;
+  line-height: 1.35;
+  color: var(--hud-ink);
+  background-color: var(--hud-bg);
+}
+
+/* Content area below the status bar */
+.hud-body {
+  position: absolute;
+  inset: var(--hud-top) var(--hud-gutter) var(--hud-bottom);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Typography */
+.slidev-layout.hud {
+  h1,
+  h2,
+  h3 {
+    font-family: var(--hud-font-head);
+    font-weight: 700;
+    margin: 0;
+    color: var(--hud-ink);
+  }
+
+  h1 {
+    font-size: 72px;
+    line-height: 1.05;
+    margin: 0 0 48px;
+  }
+
+  h2 {
+    font-size: 48px;
+    line-height: 1.1;
+    margin: 0 0 28px;
+  }
+
+  h3 {
+    font-size: 36px;
+    font-weight: 600;
+    line-height: 1.15;
+    margin: 0 0 20px;
+  }
+
+  p {
+    margin: 0 0 24px;
+    line-height: 1.4;
+  }
+
+  strong,
+  b {
+    font-weight: 600;
+  }
+
+  mark {
+    background: none;
+    color: var(--hud-accent);
+    font-weight: 600;
+  }
+
+  a {
+    color: var(--hud-accent);
+    border-bottom: 2px solid currentColor;
+    text-decoration: none;
+  }
+
+  ul,
+  ol {
+    list-style: none;
+    margin: 0 0 24px;
+    padding: 0;
+  }
+
+  li {
+    position: relative;
+    margin: 0 0 24px;
+    padding: 0 0 0 48px;
+    line-height: 1.35;
+  }
+
+  ul > li::before {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 0.45em;
+    width: 14px;
+    height: 14px;
+    background: var(--hud-accent);
+  }
+
+  li > ul {
+    margin: 20px 0 0;
+  }
+
+  li > ul > li {
+    font-size: 28px;
+    margin-bottom: 16px;
+  }
+
+  li > ul > li::before {
+    background: none;
+    border: 3px solid var(--hud-muted);
+    width: 12px;
+    height: 12px;
+  }
+
+  ol {
+    counter-reset: hud-ol;
+  }
+
+  ol > li {
+    counter-increment: hud-ol;
+    padding-left: 72px;
+  }
+
+  ol > li::before {
+    content: counter(hud-ol, decimal-leading-zero);
+    position: absolute;
+    left: 0;
+    top: 0.15em;
+    font-family: var(--hud-font-mono);
+    font-weight: 600;
+    font-size: 0.75em;
+    letter-spacing: 0.05em;
+    color: var(--hud-accent);
+  }
+
+  :not(pre) > code {
+    font-family: var(--hud-font-mono);
+    font-size: 0.85em;
+    font-weight: 400;
+    padding: 0.05em 0.35em;
+    border-radius: 0;
+    background: var(--hud-surface);
+    box-shadow: inset 0 0 0 2px var(--hud-grid);
+  }
+
+  blockquote {
+    margin: 0 0 32px;
+    padding: 4px 0 4px 40px;
+    border-left: 10px solid var(--hud-accent);
+    border-radius: 0;
+    background: none;
+    color: var(--hud-ink);
+    font-family: var(--hud-font-head);
+    font-weight: 700;
+    font-size: 48px;
+    line-height: 1.1;
+  }
+
+  blockquote > p {
+    margin: 0;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0 0 32px;
+  }
+
+  tr {
+    border: none;
+  }
+
+  th {
+    font-family: var(--hud-font-mono);
+    font-weight: 600;
+    font-size: 22px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--hud-muted);
+    text-align: left;
+    padding: 0 16px 16px 0;
+    border-bottom: 3px solid var(--hud-ink);
+  }
+
+  td {
+    padding: 24px 16px 24px 0;
+    border-bottom: 2px solid var(--hud-grid);
+  }
+
+  img {
+    max-width: 100%;
+  }
+}
+
+/* Utility classes to use in slides */
+.hud-label {
+  font-family: var(--hud-font-mono);
+  font-weight: 600;
+  font-size: 22px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--hud-muted);
+}
+
+.hud-accent {
+  color: var(--hud-accent);
+}
+
+.hud-muted {
+  color: var(--hud-muted);
+}
+
+.hud-head {
+  font-family: var(--hud-font-head);
+  font-weight: 700;
+}
+
+.hud-mono {
+  font-family: var(--hud-font-mono);
+}
+
+/* With v-click: wiped in from the top, once a <Connector> on the same click has drawn itself.
+   --after-draw-delay matches the connector's default drawing time. */
+.after-draw.slidev-vclick-target {
+  clip-path: inset(0);
+  transition: clip-path 0.45s ease-out var(--after-draw-delay, 0.9s);
+}
+
+.after-draw.slidev-vclick-hidden {
+  opacity: 1 !important;
+  clip-path: inset(0 0 100% 0);
+  transition: none;
+}
+
+/* With v-click, for bordered elements (cards, framed images): opens from its center like a window,
+   first a thin horizontal strip, then full height; hiding plays it backwards.
+   Transitions (not animations), so that nothing plays when a slide is entered.
+   The first stage speeds up into the second, which starts as it ends, so the motion has no pause.
+   --enter-delay (on the element) delays the opening, e.g. to let another element close first. */
+@property --open-x {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+
+@property --open-y {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+
+.open-center.slidev-vclick-target {
+  --open-x: 0%;
+  --open-y: 0%;
+  clip-path: inset(var(--open-y) var(--open-x));
+  transition:
+    --open-x 0.22s ease-in var(--enter-delay, 0s),
+    --open-y 0.3s ease-out calc(0.2s + var(--enter-delay, 0s));
+}
+
+.open-center.slidev-vclick-hidden {
+  --open-x: 50%;
+  --open-y: 49%;
+  opacity: 1 !important;
+  transition:
+    --open-y 0.18s ease-in,
+    --open-x 0.2s ease-out 0.16s;
+}

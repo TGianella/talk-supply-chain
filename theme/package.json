@@ -1,0 +1,30 @@
+{
+  "name": "slidev-theme-dossier",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Light forensic HUD theme (2000s crime-lab software) for this talk",
+  "keywords": [
+    "slidev-theme"
+  ],
+  "engines": {
+    "slidev": ">=53.0.0"
+  },
+  "slidev": {
+    "colorSchema": "light",
+    "highlighter": "shiki",
+    "defaults": {
+      "colorSchema": "light",
+      "canvasWidth": 1920,
+      "aspectRatio": "16/9",
+      "htmlAttrs": {
+        "lang": "fr"
+      },
+      "fonts": {
+        "provider": "none",
+        "sans": "IBM Plex Sans",
+        "serif": "Chakra Petch",
+        "mono": "IBM Plex Mono"
+      }
+    }
+  }
+}

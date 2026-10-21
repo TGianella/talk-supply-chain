@@ -1,0 +1,50 @@
+/* Design tokens, mirrored from the variables in design.pen */
+:root {
+  --hud-bg: #eef2f6;
+  --hud-ink: #0b2545;
+  --hud-accent: #c2410c;
+  --hud-accent-bright: #ff8a4c; /* only on --hud-ink backgrounds */
+  --hud-accent-tint: #c2410c14;
+  --hud-grid: #d6dee8;
+  --hud-muted: #4f6382;
+  --hud-faint: #bfcbdb;
+  --hud-surface: #ffffff;
+
+  /* Scene (dark) variant */
+  --scene-bg: #121314;
+  --scene-chalk: #f2f1ec;
+  --scene-chalk-muted: #a7abb0;
+  --scene-tape: #ffd21f;
+  --scene-tape-ink: #111111;
+  --scene-glow: #2bff6e; /* phosphor green around the typewriter title */
+  --scene-glow-deep: #1fd85c;
+
+  --hud-font-head: 'Chakra Petch', 'IBM Plex Sans', sans-serif;
+  --hud-font-body: 'IBM Plex Sans', system-ui, sans-serif;
+  --hud-font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --hud-font-tape: 'Anton', 'Impact', sans-serif;
+  --hud-font-typewriter: 'Courier Prime', 'Courier New', monospace;
+
+  /* Slide geometry, on the 1920×1080 canvas */
+  --hud-statusbar: 64px;
+  --hud-gutter: 120px;
+  --hud-top: 140px;
+  --hud-bottom: 100px;
+
+  /* Slidev variables */
+  --slidev-theme-primary: var(--hud-accent);
+  --slidev-slide-container-background: #000; /* outside the slide; each layout paints its own background */
+  --slidev-controls-foreground: var(--hud-ink);
+  --slidev-code-background: var(--hud-surface);
+  --slidev-code-foreground: var(--hud-ink);
+  --slidev-code-font-family: var(--hud-font-mono);
+  --slidev-code-font-size: 26px;
+  --slidev-code-line-height: 42px;
+  --slidev-code-padding: 28px 32px;
+  --slidev-code-radius: 0;
+  --slidev-code-margin: 0;
+  --slidev-code-tab-font-size: 20px;
+  --slidev-code-tab-text-color: var(--hud-surface);
+  --slidev-code-tab-active-text-color: var(--hud-surface);
+  --slidev-code-tab-divider: var(--hud-ink);
+}

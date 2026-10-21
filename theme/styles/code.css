@@ -1,0 +1,35 @@
+/* Code blocks: white panel with an ink border.
+   A title (```ts [bundle.js]) becomes the navy panel bar. */
+.slidev-layout.hud {
+  .slidev-code-wrapper {
+    margin: 0 0 32px !important;
+  }
+
+  .slidev-code {
+    border: 2px solid var(--hud-ink);
+  }
+
+  .slidev-code-block-title {
+    background: var(--hud-ink);
+    color: var(--hud-surface);
+    font-family: var(--hud-font-mono);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    padding: 12px 24px;
+    box-shadow: none;
+  }
+
+  .slidev-code-block-title + .slidev-code {
+    border-top: none;
+  }
+
+  .slidev-code .slidev-code-dishonored {
+    opacity: 0.35;
+  }
+
+  .slidev-code-line-numbers .slidev-code code .line::before {
+    color: var(--hud-faint);
+    width: 1.5em;
+    margin-right: 1em;
+  }
+}
