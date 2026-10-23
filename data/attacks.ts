@@ -1,4 +1,4 @@
-// Events of the "Eté 2025 : le tournant" timeline, shared by its two slides (before and after event-stream)
+// Events of the "Eté 2025 : le tournant" timeline, shared by its slides (before event-stream, then back from each detailed attack)
 export default [
   { date: '2010-01-12', name: 'npm', text: 'Lancement du registre', muted: true },
   { date: '2016-03-22', name: 'left-pad', text: 'Des milliers de builds cassés', muted: true },

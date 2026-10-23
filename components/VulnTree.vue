@@ -3,15 +3,25 @@
 // showing how a weakness in the top package reaches the projects. Two clicks, from `at`:
 // - mode "flaw": a flaw shows in the top package (at), then an attacker exploits it in one project (at + 1);
 // - mode "poison": an attacker injects code into the top package (at), then it spreads to everything downstream (at + 1).
+// - mode "worm": one click (at), three small trees side by side: an attacker injects code into the first
+//   package, it reaches its projects, and from one of them (its stolen npm token) the worm publishes
+//   itself into the next package, and so on.
+// With `shown`, the tree is in its final state from the start, without clicks.
 // The attacker comes from the left, rows are labelled on the right.
 // <VulnTree mode="flaw" :at="1" pkg="lodash" project="ma-boutique" />
+import { getCurrentInstance } from 'vue'
+
 const props = withDefaults(defineProps<{
-  mode: 'flaw' | 'poison'
-  at: number
+  mode: 'flaw' | 'poison' | 'worm'
+  at?: number
+  shown?: boolean
   pkg?: string // name of the top package, with an optional version: 'lodash@4.17.11'
   project?: string // name of the attacked project (flaw mode)
   attacker?: string
-}>(), { attacker: 'attaque' })
+}>(), { at: 0, attacker: 'attaque' })
+
+// shown: v-click does nothing, so that every step is visible
+const vClick = props.shown ? {} : getCurrentInstance()!.appContext.app.directive('click')!
 
 // drawing area: from the start of the attack arrow on the first project (x 50) to the end of the row labels
 const [X0, W] = [50, 1000]
@@ -37,8 +47,36 @@ const lower = apps.map(a => edge(mids[a.parent], a, AH))
 // flaw mode: the first project is attacked, through the first branch
 const hit = 0
 
+// worm mode: three trees of one package and two projects, the right project of each one publishing into
+// the package of the next tree (right-angled arrow, from its right side, up, to the package's left side)
+const WP = 170
+const WA = 450
+const worm = [240, 500, 760].map(x => ({
+  pkg: { x, y: WP },
+  apps: [x - 55, x + 55].map(ax => ({ x: ax, y: WA })),
+}))
+const wormEdges = worm.map(t => t.apps.map(a => edge(t.pkg, a, AH)))
+const hops = worm.slice(1).map((t, i) => {
+  const a = worm[i].apps[1]
+  const [x0, x1] = [a.x + AW / 2, t.pkg.x - P / 2]
+  const mx = x0 + 24
+  return {
+    d: `M${x0} ${a.y}H${mx}V${t.pkg.y}H${x1 - 18}`,
+    head: `${x1 - 4},${t.pkg.y} ${x1 - 22},${t.pkg.y - 11} ${x1 - 22},${t.pkg.y + 11}`,
+  }
+})
+// timing of each tree: package, edges, projects, then the hop to the next one (after the window opens
+// and the attack arrow)
+const WT = 1
+const STEP = 1.6
+const tw = (i: number, k: number) => d(WT + i * STEP + k * 0.4)
+
 // attacker arrow, to the target's left side, with its label above it
-const target = props.mode === 'flaw' ? { x: apps[hit].x - AW / 2, y: apps[hit].y } : { x: root.x - P / 2, y: root.y }
+const target = props.mode === 'flaw'
+  ? { x: apps[hit].x - AW / 2, y: apps[hit].y }
+  : props.mode === 'worm'
+    ? { x: worm[0].pkg.x - P / 2, y: WP }
+    : { x: root.x - P / 2, y: root.y }
 // the arrow starts where the label starts (label: about 105 units for "attaque", ending ~35 before the target)
 const start = target.x - 140
 const arrow = `M${start} ${target.y}H${target.x - 18}`
@@ -50,10 +88,15 @@ const crack = `M${root.x - 14} ${root.y - P / 2}L${root.x + 4} ${root.y - 8}L${r
 // row labels on the right, with a bracket along the rows they cover, its arms toward the tree,
 // reaching a little above and below the boxes
 const ext = 10
-const rows = [
-  { label: 'dépendances', y0: levels[0] - P / 2 - ext, y1: levels[1] + P / 2 + ext },
-  { label: 'projets', y0: levels[2] - AH / 2 - ext, y1: levels[2] + AH / 2 + ext },
-]
+const rows = props.mode === 'worm'
+  ? [
+      { label: 'paquets', y0: WP - P / 2 - ext, y1: WP + P / 2 + ext },
+      { label: 'projets', y0: WA - AH / 2 - ext, y1: WA + AH / 2 + ext },
+    ]
+  : [
+      { label: 'dépendances', y0: levels[0] - P / 2 - ext, y1: levels[1] + P / 2 + ext },
+      { label: 'projets', y0: levels[2] - AH / 2 - ext, y1: levels[2] + AH / 2 + ext },
+    ]
 const bx = 876
 
 // version (after the last @, not a scope's leading one) shown lighter
@@ -71,13 +114,39 @@ const d = (s: number) => ({ '--d': `${s}s` })
       <text :x="bx + 20" :y="(r.y0 + r.y1) / 2" class="row" dominant-baseline="middle">{{ r.label }}</text>
     </g>
 
+    <template v-if="mode === 'worm'">
+      <!-- trees, at rest -->
+      <path v-for="(e, i) in wormEdges.flat()" :key="`we${i}`" :d="e" class="edge" />
+      <template v-for="(t, i) in worm" :key="`wt${i}`">
+        <rect :x="t.pkg.x - P / 2" :y="t.pkg.y - P / 2" :width="P" :height="P" class="pkg" />
+        <rect v-for="(a, j) in t.apps" :key="j" :x="a.x - AW / 2" :y="a.y - AH / 2" :width="AW" :height="AH" class="app" />
+      </template>
+
+      <!-- the attacker injects code into the first package -->
+      <path v-click="at" :d="arrow" pathLength="1" class="hot draw" :style="d(WT - 0.5)" />
+      <polygon v-click="at" :points="head" class="head fade" :style="d(WT - 0.05)" />
+      <text v-click="at" :x="start" :y="target.y - 22" class="tag fade" :style="d(WT - 0.5)">{{ attacker }}</text>
+      <!-- each tree in turn: its package, its projects, then the worm publishes itself into the next package -->
+      <template v-for="(t, i) in worm" :key="`wh${i}`">
+        <rect v-click="at" :x="t.pkg.x - P / 2" :y="t.pkg.y - P / 2" :width="P" :height="P" class="hit boxed fade" :style="tw(i, 0)" />
+        <path v-for="(e, j) in wormEdges[i]" :key="`e${j}`" v-click="at" :d="e" pathLength="1" class="hot draw" :style="tw(i, 0.25)" />
+        <rect v-for="(a, j) in t.apps" :key="`a${j}`" v-click="at" :x="a.x - AW / 2" :y="a.y - AH / 2" :width="AW" :height="AH" class="hit fade" :style="tw(i, 1.5)" />
+        <template v-if="hops[i]">
+          <path v-click="at" :d="hops[i].d" pathLength="1" class="hot draw" :style="tw(i, 2)" />
+          <polygon v-click="at" :points="hops[i].head" class="head fade" :style="tw(i, 3.1)" />
+        </template>
+      </template>
+    </template>
+
     <!-- tree, at rest -->
-    <path v-for="(e, i) in [...upper, ...lower]" :key="`e${i}`" :d="e" class="edge" />
-    <rect :x="root.x - P / 2" :y="root.y - P / 2" :width="P" :height="P" class="pkg" />
-    <rect v-for="(m, i) in mids" :key="`m${i}`" :x="m.x - P / 2" :y="m.y - P / 2" :width="P" :height="P" class="pkg" />
-    <rect v-for="(a, i) in apps" :key="`a${i}`" :x="a.x - AW / 2" :y="a.y - AH / 2" :width="AW" :height="AH" class="app" />
-    <text v-if="pkg" :x="root.x + P / 2 + 20" :y="root.y + 14" class="name">{{ pkgName }}<tspan v-if="pkgVersion" class="version">@{{ pkgVersion }}</tspan></text>
-    <text v-if="project && mode === 'flaw'" :x="apps[hit].x" :y="apps[hit].y + AH / 2 + 36" class="name" text-anchor="middle">{{ project }}</text>
+    <template v-else>
+      <path v-for="(e, i) in [...upper, ...lower]" :key="`e${i}`" :d="e" class="edge" />
+      <rect :x="root.x - P / 2" :y="root.y - P / 2" :width="P" :height="P" class="pkg" />
+      <rect v-for="(m, i) in mids" :key="`m${i}`" :x="m.x - P / 2" :y="m.y - P / 2" :width="P" :height="P" class="pkg" />
+      <rect v-for="(a, i) in apps" :key="`a${i}`" :x="a.x - AW / 2" :y="a.y - AH / 2" :width="AW" :height="AH" class="app" />
+      <text v-if="pkg" :x="root.x + P / 2 + 20" :y="root.y + 14" class="name">{{ pkgName }}<tspan v-if="pkgVersion" class="version">@{{ pkgVersion }}</tspan></text>
+      <text v-if="project && mode === 'flaw'" :x="apps[hit].x" :y="apps[hit].y + AH / 2 + 36" class="name" text-anchor="middle">{{ project }}</text>
+    </template>
 
     <template v-if="mode === 'flaw'">
       <!-- the flaw, there from the start -->
@@ -95,7 +164,7 @@ const d = (s: number) => ({ '--d': `${s}s` })
       <text v-click="at + 1" :x="start" :y="target.y - 22" class="tag fade" :style="d(1.35)">{{ attacker }}</text>
     </template>
 
-    <template v-else>
+    <template v-if="mode === 'poison'">
       <!-- an attacker injects code into the package -->
       <path v-click="at" :d="arrow" pathLength="1" class="hot draw" />
       <polygon v-click="at" :points="head" class="head fade" :style="d(0.45)" />

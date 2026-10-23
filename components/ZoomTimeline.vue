@@ -2,7 +2,7 @@
 // Slidev remounts every slide when it switches between a view transition and a normal one (here, on
 // the first click after a view transition). What a timeline showed last is kept per slide, so that
 // once remounted it starts from there and still animates to the new state.
-const memory = new Map<string, { state: 'idle' | 'sweep' | 'shown', zoomed: boolean, focused: boolean }>()
+const memory = new Map<string, { state: 'idle' | 'sweep' | 'shown', zoomed: boolean, focused: string | null }>()
 </script>
 
 <script setup lang="ts">
@@ -10,15 +10,20 @@ const memory = new Map<string, { state: 'idle' | 'sweep' | 'shown', zoomed: bool
 // At click `zoom`, the period widens to the full width, the events before it slide off to the left,
 // the markers piled up in the period spread out along the axis, and their labels show.
 // Going back plays the zoom out. Without `zoom`, the timeline doesn't zoom.
-// `highlight` names an event to single out, from click `highlight-at` (0: from the start) until the zoom:
-// the other events dim and a frame closes in on its label. With `morph`, its name takes that
-// view-transition-name and its frame `<morph>-frame`, so that they morph into the elements of the next
-// slide with the same names (both slides with `transition: view-transition`). Give that slide's frame
-// `view-transition-class: focus-frame` too: its border then stays thin while it grows; and its text
-// `view-transition-class: focus-text`, `display: inline-block` and `line-height: 1`: the text then
-// scales without stretching, at the same size on both sides (styles below).
-// A timeline highlighted from the start (`highlight-at` 0) is the one you come back to from that slide:
+// At click `trail`, once zoomed, small dots pop from left to right around the axis after the events named
+// in `trail-after` (default: the last one), up to the next event or the edge of the slide: scattered, denser
+// right after the event, one every `trail-gap` px on average. The attacks go on.
+// `highlights` single out events, one at a time: each one from its click `at` (0: from the start) until
+// the next highlight or the zoom click, zoomed or not: the other events dim and a frame closes in on its
+// label. A highlight can single out several events at once, with a list of names (without `morph`). With `morph`, its name takes that view-transition-name and its frame `<morph>-frame`, so that
+// they morph into the elements of the next slide with the same names (both slides with
+// `transition: view-transition`). Give that slide's frame `view-transition-class: focus-frame` too: its
+// border then stays thin while it grows; and its text `view-transition-class: focus-text`,
+// `display: inline-block` and `line-height: 1`: the text then scales without stretching, at the same size
+// on both sides (styles below).
+// A highlight from the start (`at` 0) with a morph is the slide you come back to from that event's slide:
 // once the transition is over, the date and text of the label fade in and the highlight drops.
+// <ZoomTimeline … :zoom="1" :highlights="[{ name: 'event-stream', morph: 'event-stream' }, { name: 'nx', at: 2, morph: 'nx' }]" />
 // <ZoomTimeline zoom-from="2025-04-15" zoom-label="été 2025" :zoom="1" :events="[
 //   { date: '2018-11-26', name: 'event-stream', text: 'Vol de bitcoins' },
 //   { date: '2025-09-08', name: 'chalk, debug', text: '2,6 Md de téléchargements / semaine' },
@@ -40,11 +45,12 @@ const props = withDefaults(defineProps<{
   zoomTo?: string
   zoomLabel?: string
   zoom?: number
-  highlight?: string
-  highlightAt?: number
-  morph?: string
+  trail?: number
+  trailAfter?: string[]
+  trailGap?: number
+  highlights?: { name: string | string[], at?: number, morph?: string }[]
   reveal?: boolean
-}>(), { highlightAt: 0, reveal: true })
+}>(), { highlights: () => [], reveal: true, trailGap: 16 })
 
 const SW = 1920 // slide width
 const PAD = 120 // the time range maps to [PAD, SW - PAD]
@@ -185,6 +191,23 @@ place(items.filter(it => !it.zoomed), [
 ])
 place(items.filter(it => it.zoomed), [])
 
+// trailing dots, zoomed: between an event and the next one (or the edge of the slide), at a distance from
+// the event drawn from an exponential distribution cut at the next one (most of them in the first third),
+// a little above or below the axis, less so farther away. Seeded, so that they stay put
+const hotX = items.filter(it => it.zoomed).map(it => ({ name: it.name, x: x1(it.t) })).sort((a, b) => a.x - b.x)
+let seed = 7
+const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647
+const dots = hotX.flatMap((e, k) => {
+  if (!(props.trailAfter ?? [hotX.at(-1)?.name]).includes(e.name))
+    return []
+  const L = (hotX[k + 1]?.x ?? SW + 20) - e.x - 24
+  const lambda = L / 3.2
+  return Array.from({ length: Math.max(0, Math.round(L / props.trailGap)) }, () => {
+    const d = -lambda * Math.log(1 - rnd() * (1 - Math.exp(-L / lambda)))
+    return { x: e.x + 22 + d, y: (rnd() * 2 - 1) * 11 * (1 - d / L / 2) }
+  })
+}).sort((a, b) => a.x - b.x)
+
 // height: as many lanes as used above and below, and room for the bracket
 const up = Math.max(0, ...items.map(it => it.slot))
 const down = Math.max(0, ...items.map(it => -it.slot))
@@ -238,12 +261,27 @@ const released = ref(false)
 let arrival: ReturnType<typeof setTimeout> | undefined
 
 const zoomNow = computed(() => props.zoom != null && $clicks.value >= props.zoom)
-const focusNow = computed(() => !!props.highlight && $clicks.value >= props.highlightAt && !zoomNow.value && !released.value)
+// the highlight of the current click: the last one started, unless a later highlight or the zoom ended it
+// each highlight goes by a key, its names joined
+const marks = props.highlights
+  .map(h => ({ at: 0, ...h, names: [h.name].flat(), key: [h.name].flat().join('\n') }))
+  .sort((a, b) => a.at - b.at)
+const ends = [...marks.map(h => h.at), ...(props.zoom != null ? [props.zoom] : [])]
+const back = marks.find(h => h.at === 0 && h.morph) // the highlight you come back to
+const focusNow = computed(() => {
+  const c = $clicks.value
+  const h = marks.findLast(h => c >= h.at)
+  if (!h || ends.some(e => e > h.at && e <= c) || (h === back && released.value))
+    return null
+  return h.key
+})
+// whether an event is among those of a highlight key
+const among = (key: string | null, name: string) => !!key && key.split('\n').includes(name)
 
 watch(onScreen, (on) => {
   clearTimeout(arrival)
   released.value = false
-  arriving.value = on && props.highlightAt === 0 && !!props.morph && focusNow.value
+  arriving.value = on && !!back && focusNow.value === back.key
   if (arriving.value) {
     arrival = setTimeout(() => {
       arriving.value = false
@@ -252,7 +290,12 @@ watch(onScreen, (on) => {
   }
 })
 const zoomed = ref(last?.zoomed ?? zoomNow.value)
-const focused = ref(last?.focused ?? focusNow.value)
+const focused = ref(last ? last.focused : focusNow.value)
+// the event styled as highlighted: the current one, or the last one while its highlight fades out
+const shown = ref(focused.value)
+watch(focused, f => f && (shown.value = f))
+const morph = computed(() => marks.find(h => h.key === focused.value)?.morph)
+const framed = new Set(marks.flatMap(h => h.names))
 const root = ref<HTMLElement>()
 onMounted(() => {
   root.value?.getBoundingClientRect()
@@ -274,8 +317,11 @@ watch([state, zoomed, focused], ([s, z, f]) => memory.set(key, { state: s, zoome
     :data-arriving="arriving || undefined"
     :style="{ '--X': X, '--s0': s0, '--r': s1 / s0, 'height': `${height}px`, '--axis': `${axisY}px`, '--sweep': `${SWEEP}s` }"
   >
-    <i v-if="highlightAt > 0" v-click="highlightAt" class="step" />
+    <i v-for="h in marks.filter(h => h.at > 0)" :key="h.key" v-click="h.at" class="step" />
     <i v-if="zoom" v-click="zoom" class="step" />
+    <div v-if="trail" v-click="trail" class="trail">
+      <i v-for="(d, k) in dots" :key="k" class="dot" :style="{ left: `${d.x}px`, top: `calc(var(--axis) + ${d.y}px)`, '--k': k }" />
+    </div>
     <i class="axis" />
 
     <!-- scale -->
@@ -304,7 +350,7 @@ watch([state, zoomed, focused], ([s, z, f]) => memory.set(key, { state: s, zoome
       v-for="it in items"
       :key="it.i"
       class="at"
-      :class="{ hot: it.zoomed, muted: it.muted, focus: it.name === highlight, dim: it.name !== highlight }"
+      :class="{ hot: it.zoomed, muted: it.muted, focus: among(shown, it.name), dim: !among(shown, it.name) }"
       :style="{ ...at(it.t), '--level': it.level }"
     >
       <div
@@ -314,13 +360,13 @@ watch([state, zoomed, focused], ([s, z, f]) => memory.set(key, { state: s, zoome
       >
         <div class="label">
           <span
-            v-if="it.name === highlight"
+            v-if="framed.has(it.name)"
             class="frame"
-            :style="focused && morph ? { viewTransitionName: `${morph}-frame`, viewTransitionClass: 'focus-frame' } : undefined"
+            :style="among(focused, it.name) && morph ? { viewTransitionName: `${morph}-frame`, viewTransitionClass: 'focus-frame' } : undefined"
           />
           <div class="date">{{ it.date }}</div>
           <div class="name">
-            <span :style="it.name === highlight && focused && morph ? { viewTransitionName: morph, viewTransitionClass: 'focus-text' } : undefined">{{ it.name }}</span>
+            <span :style="among(focused, it.name) && morph ? { viewTransitionName: morph, viewTransitionClass: 'focus-text' } : undefined">{{ it.name }}</span>
           </div>
           <div v-if="it.text" class="text">{{ it.text }}</div>
         </div>
@@ -490,6 +536,27 @@ watch([state, zoomed, focused], ([s, z, f]) => memory.set(key, { state: s, zoome
 
 .muted .marker {
   box-shadow: inset 0 0 0 3px var(--hud-faint);
+}
+
+/* trailing dots: hidden until their click, then they pop one after the other. Outlined in the background
+   color, so that overlapping dots stay apart */
+.trail {
+  position: absolute;
+  inset: 0;
+}
+
+.dot {
+  position: absolute;
+  z-index: 1;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  background: var(--hud-accent);
+  outline: 2px solid var(--hud-bg);
+}
+
+.trail:not(.slidev-vclick-hidden) .dot {
+  animation: pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) calc(var(--k) * 0.03s) both;
 }
 
 /* label on a pole from the axis */
@@ -688,12 +755,12 @@ watch([state, zoomed, focused], ([s, z, f]) => memory.set(key, { state: s, zoome
   inset: -28px -47px -28px -30px;
 }
 
-[data-focus] .frame {
+[data-focus] .focus .frame {
   inset: -12px -14px -12px -31px;
   opacity: 1;
 }
 
-[data-focus] .flag.right .frame {
+[data-focus] .focus .flag.right .frame {
   inset: -12px -31px -12px -14px;
 }
 </style>

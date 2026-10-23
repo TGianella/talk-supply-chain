@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useSlideContext } from '@slidev/client'
-import { computed, onMounted, ref, useSlots, watch } from 'vue'
+import { computed, defineComponent, onMounted, provide, ref, useSlots, watch } from 'vue'
 import HudFrame from '../components/HudFrame.vue'
 import Kicker from '../components/Kicker.vue'
 import SubjectCard from '../components/SubjectCard.vue'
@@ -16,6 +16,9 @@ import SubjectCard from '../components/SubjectCard.vue'
 //     more windows in ::window-<n>-2::, ::window-<n>-3::… each open at the click that closes the previous,
 //   - a click closes the (last) window and shows the row; the focus stays until the next step.
 // A row without `at` or without a window skips that click. Without `reveal`, everything is shown.
+// `clicks` on a row keeps its windows open for more clicks, for steps inside them (a list, one number per
+// window, or one number for all): a component in the window gets the click that opened it with
+// inject('case-window-at') (a ref) and counts its steps from there.
 // Windows are opened with the `open-center` transition; put the window itself in the slot, e.g.
 // ::window-1::  <AppWindow title="…">…</AppWindow>
 // Closing forward, a window flies onto its row and folds as it lands, and the row appears;
@@ -34,7 +37,7 @@ const props = withDefaults(defineProps<{
     fields?: { label: string, value: string, alert?: boolean }[]
   }
   modusLabel?: string
-  modus?: { label: string, value: string, alert?: boolean, at?: string | string[] }[]
+  modus?: { label: string, value: string, alert?: boolean, at?: string | string[], clicks?: number | number[] }[]
   timeline?: { date: string, label: string, hot?: boolean }[]
   cols?: string
 }>(), {
@@ -69,7 +72,12 @@ const steps = computed(() => {
     if (start.value === false)
       return { dates, focus: false, windows: [], row: false } as const
     const focus = dates.length ? c++ : false
-    const windows = windowSlots(i + 1).map(slot => ({ slot, at: [c, ++c] as [number, number] }))
+    const windows = windowSlots(i + 1).map((slot, k) => {
+      const extra = Array.isArray(m.clicks) ? m.clicks[k] ?? 0 : m.clicks ?? 0
+      const open = c
+      c += 1 + extra
+      return { slot, at: [open, c] as [number, number] }
+    })
     return { dates, focus, windows, row: c++ }
   })
 })
@@ -78,6 +86,15 @@ const steps = computed(() => {
 const focused = computed(() => {
   const step = steps.value.findLast(s => s.focus !== false && $clicks.value >= s.focus)
   return step?.dates ?? []
+})
+
+// gives the content of a window the click that opened it (steps inside a window: see `clicks`)
+const WindowScope = defineComponent({
+  props: { at: { type: Number, required: true } },
+  setup(p, { slots }) {
+    provide('case-window-at', computed(() => p.at))
+    return () => slots.default?.()
+  },
 })
 
 // States toggled by clicks on elements that also have a v-click go in data attributes: a :class
@@ -129,7 +146,7 @@ watch($clicks, measure, { flush: 'post' })
                 <Kicker v-click="atTimeline">{{ modusLabel }}</Kicker>
                 <div
                   v-for="(m, i) in modus"
-                  :key="m.label"
+                  :key="`${m.label}-${steps[i].row}`"
                   :ref="el => rowEls[i] = el as HTMLElement"
                   v-click="steps[i].row"
                   class="modus-row"
@@ -157,7 +174,9 @@ watch($clicks, measure, { flush: 'post' })
       </div>
       <div v-if="$slots.windows || steps.some(s => s.windows.length)" class="windows">
         <template v-for="(s, i) in steps" :key="i">
-          <template v-for="(w, k) in s.windows" :key="w.slot">
+          <!-- keyed by their clicks too: v-click reads its value once, so a window remounts when its clicks
+               change (on hot reload, after an edit of `clicks`) -->
+          <template v-for="(w, k) in s.windows" :key="`${w.slot}-${w.at}`">
             <!-- the last window of a step flies onto its row; the next window waits for the previous to fold -->
             <div
               v-if="k === s.windows.length - 1"
@@ -167,10 +186,14 @@ watch($clicks, measure, { flush: 'post' })
               :data-closed="$clicks >= w.at[1] ? '' : undefined"
               :style="{ ...flights[i], '--enter-delay': k ? '0.4s' : undefined }"
             >
-              <slot :name="w.slot" />
+              <WindowScope :at="w.at[0]">
+                <slot :name="w.slot" />
+              </WindowScope>
             </div>
             <div v-else v-click="w.at" class="open-center" :style="{ '--enter-delay': k ? '0.4s' : undefined }">
-              <slot :name="w.slot" />
+              <WindowScope :at="w.at[0]">
+                <slot :name="w.slot" />
+              </WindowScope>
             </div>
           </template>
         </template>

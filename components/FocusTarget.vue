@@ -26,7 +26,7 @@ const inset = (r: DOMRect) => `inset(${r.top}px ${innerWidth - r.right}px ${inne
 
 // the highlight frame of the timeline that is shown (the other slides are display: none)
 function label() {
-  const frame = [...document.querySelectorAll<HTMLElement>('.zoom-timeline[data-focus] .frame')]
+  const frame = [...document.querySelectorAll<HTMLElement>('.zoom-timeline[data-focus] .focus .frame')]
     .find(el => el.getClientRects().length)
   if (frame)
     html.style.setProperty('--focus-from', inset(frame.getBoundingClientRect()))

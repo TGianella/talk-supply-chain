@@ -317,11 +317,13 @@ if (code) eval(code)
 
 <!--
 Layout `case` : une attaque sur une slide. Props : kicker, subject (props de <SubjectCard>, affichée compacte),
-modusLabel (« Mode opératoire » par défaut), modus [{ label, value, alert, at }], timeline [{ date, label, hot }], cols, status, reveal.
+modusLabel (« Mode opératoire » par défaut), modus [{ label, value, alert, at, clicks }], timeline [{ date, label, hot }], cols, status, reveal.
 reveal (numéro de clic) : la carte apparaît à ce clic, la frise et le titre de la colonne de droite au suivant ; puis chaque ligne
 de modus est une étape : un clic met en avant ses dates sur la frise (at : une date ou une liste, écrites comme dans timeline,
 entre guillemets), un clic ouvre sa fenêtre (slot ::window-n::, n = rang de la ligne à partir de 1), un clic la ferme et affiche la ligne.
 Sans at ou sans fenêtre, l'étape saute ce clic. Sans reveal, tout est affiché d'emblée.
+clicks : garde les fenêtres de la ligne ouvertes pour autant de clics en plus (un nombre par fenêtre, ou un seul pour toutes) ;
+un composant dans la fenêtre récupère le clic d'ouverture avec inject('case-window-at') et compte ses étapes à partir de là.
 Slot par défaut : titre et sous-titre. Slots ::subject:: et ::modus:: : remplacent la carte et la colonne de droite.
 Slot ::windows:: : calque libre au-dessus du corps de la slide pour d'autres fenêtres, empilées au centre, avec des clics absolus
 après les étapes. Ex. <AppWindow v-click="[13, 14]" class="open-center">.

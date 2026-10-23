@@ -12,6 +12,8 @@ import { computed, onMounted, onUnmounted, ref, useId, watch } from 'vue'
 // and the next click zooms out on both axes at once to the whole data.
 // Without a unit, ticks from 10 000 up read in thousands (« 200 k »).
 // <ChartWindow v-click … type="line" :max="1400000" :step="200000" :rescale="{ until: 2020, max: 1200, step: 200 }" />
+// reference: a dashed horizontal line at a value to compare against, labelled at its left end.
+// <ChartWindow … :reference="{ value: 6892, label: 'Maven Central : 6 892 plugins depuis 2005' }" />
 const props = withDefaults(defineProps<{
   title: string
   source: string
@@ -27,6 +29,7 @@ const props = withDefaults(defineProps<{
   // x labels on the line chart, every n years
   every?: number
   rescale?: { until: number, max: number, step: number, every?: number }
+  reference?: { value: number, label: string }
 }>(), { type: 'bar', data: () => [[0, 0]], max: 1, step: 1, unit: '', decimals: 0, every: 2 })
 
 const W = 800
@@ -174,6 +177,8 @@ const lastO = computed(() => props.rescale ? clamp(z.value * 3 - 2) : 1)
         <line :x1="m.left" :x2="W - m.right" :y1="t.y" :y2="t.y" class="grid" />
         <text :x="m.left - 14" :y="t.y" class="tick" text-anchor="end" dominant-baseline="middle">{{ t.label }}</text>
       </g>
+      <!-- reference line behind the data, its label (further down) in front -->
+      <line v-if="reference" :x1="m.left" :x2="W - m.right" :y1="y(reference.value)" :y2="y(reference.value)" class="reference" />
 
       <template v-if="type === 'bar'">
         <g v-for="b in bars" :key="b.x">
@@ -205,6 +210,7 @@ const lastO = computed(() => props.rescale ? clamp(z.value * 3 - 2) : 1)
         <text v-for="t in years" :key="t.yr" :x="t.x" :y="base + 28" :opacity="t.o" class="tick" text-anchor="middle">{{ t.yr }}</text>
       </template>
 
+      <text v-if="reference" :x="m.left + 10" :y="y(reference.value) - 10" class="reference-label">{{ reference.label }}</text>
       <line :x1="m.left" :x2="W - m.right" :y1="base" :y2="base" class="axis" />
     </svg>
     <div class="source">{{ source }}</div>
@@ -281,6 +287,22 @@ const lastO = computed(() => props.rescale ? clamp(z.value * 3 - 2) : 1)
 
 .mark {
   fill: var(--hud-ink);
+}
+
+.reference {
+  stroke: var(--hud-ink);
+  stroke-width: 2.5;
+  stroke-dasharray: 10 8;
+}
+
+/* surface halo so the label stays readable over the data it crosses */
+.reference-label {
+  font-family: var(--hud-font-mono);
+  font-size: 18px;
+  fill: var(--hud-ink);
+  stroke: var(--hud-surface);
+  stroke-width: 6px;
+  paint-order: stroke;
 }
 
 .mark-latest {
