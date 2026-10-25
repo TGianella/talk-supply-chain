@@ -291,6 +291,8 @@ watch($clicks, measure, { flush: 'post' })
     inset: 0;
     z-index: 1;
     display: grid;
+    /* one cell the size of the body: the tallest window doesn't grow it, which would push the others down */
+    grid-template: minmax(0, 1fr) / minmax(0, 1fr);
     place-items: center;
     pointer-events: none;
   }

