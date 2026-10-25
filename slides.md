@@ -507,7 +507,7 @@ import attacks from './data/attacks'
      the first click zooms on the summer 2025 pile, the second singles out chalk, debug,
      whose name morphs into the title of the next slide -->
 <ZoomTimeline
-  :events="attacks" zoom-from="2025-07-01" zoom-label="été 2025" :reveal="false" :zoom="1"
+  :events="attacks" zoom-from="2025-07-01" zoom-label="été 2025" :reveal="false" :accent="false" :zoom="1"
   :highlights="[{ name: 'event-stream', morph: 'event-stream' }, { name: 'chalk, debug', at: 2, morph: 'chalk-debug' }]"
 />
 
@@ -631,7 +631,7 @@ import attacks from './data/attacks'
 <!-- back from chalk, debug: same timeline, zoomed from the start with chalk, debug singled out;
      the click singles out nx, whose name morphs into the title of the next slide -->
 <ZoomTimeline
-  :events="attacks" zoom-from="2025-07-01" zoom-label="été 2025" :reveal="false" :zoom="0"
+  :events="attacks" zoom-from="2025-07-01" zoom-label="été 2025" :reveal="false" :accent="false" :zoom="0"
   :highlights="[{ name: 'chalk, debug', morph: 'chalk-debug' }, { name: 'nx', at: 1, morph: 'nx' }]"
 />
 
@@ -861,7 +861,7 @@ import attacks from './data/attacks'
 <!-- back from nx: same timeline, zoomed from the start with nx singled out;
      the first click singles out both Shai-Hulud waves, the second adds markers after them: the attacks go on -->
 <ZoomTimeline
-  :events="attacks" zoom-from="2025-07-01" zoom-label="été 2025" :reveal="false" :zoom="0"
+  :events="attacks" zoom-from="2025-07-01" zoom-label="été 2025" :reveal="false" :accent="false" :zoom="0"
   :highlights="[{ name: 'nx', morph: 'nx' }, { name: ['Shai-Hulud', 'Shai-Hulud 2.0'], at: 1 }]"
   :trail="2" :trail-after="['Shai-Hulud', 'Shai-Hulud 2.0']"
 />
@@ -906,7 +906,7 @@ import attacks from './data/attacks'
 <!-- back from the worm: same timeline, zoomed from the start;
      the click singles out the first Shai-Hulud wave, whose name morphs into the title of the next slide -->
 <ZoomTimeline
-  :events="attacks" zoom-from="2025-07-01" zoom-label="été 2025" :reveal="false" :zoom="0"
+  :events="attacks" zoom-from="2025-07-01" zoom-label="été 2025" :reveal="false" :accent="false" :zoom="0"
   :highlights="[{ name: 'Shai-Hulud', at: 1, morph: 'shai-hulud' }]"
 />
 
@@ -996,3 +996,451 @@ timeline:
 <AppWindow title="Propagation : ce que bundle.js fait sur la machine" class="w-[1400px]">
   <WormCycle />
 </AppWindow>
+
+---
+transition: view-transition
+---
+
+# Eté 2025 : le tournant
+
+<script setup>
+import attacks from './data/attacks'
+</script>
+
+<!-- back from Shai-Hulud: same timeline, zoomed from the start with Shai-Hulud singled out;
+     the click singles out Shai-Hulud 2.0, whose name morphs into the title of the next slide -->
+<ZoomTimeline
+  :events="attacks" zoom-from="2025-07-01" zoom-label="été 2025" :reveal="false" :accent="false" :zoom="0"
+  :highlights="[{ name: 'Shai-Hulud', morph: 'shai-hulud' }, { name: 'Shai-Hulud 2.0', at: 1, morph: 'shai-hulud-2' }]"
+/>
+
+---
+transition: view-transition
+layout: case
+reveal: 1
+cols: 640px 1fr
+kicker: Affaire · novembre 2025
+subject:
+  header: Pièce 05 · paquets npm
+  flag: ■ Contaminé
+  name: Shai-Hulud 2.0
+  meta: 'Zapier, ENS, PostHog, Postman · nov. 2025'
+  fields:
+    - { label: Paquets contaminés, value: '796', alert: true }
+    - { label: Dépôts GitHub créés, value: '25 000+' }
+    - { label: Signature, value: 'Sha1-Hulud: The Second Coming' }
+    - { label: Calendrier, value: '18 jours avant la fin des tokens classiques', alert: true }
+modus:
+  - { label: Déclencheur, value: 'preinstall au lieu de postinstall, exécuté avec Bun', at: '21.11', clicks: [3, 2] }
+  - { label: Exfiltration, value: 'Secrets publiés dans 25 000+ dépôts « Sha1-Hulud »', at: '24.11', clicks: 3 }
+  - { label: Persistance, value: 'La machine devient un runner GitHub Actions du pirate', alert: true, clicks: 3 }
+  - { label: Propagation, value: 'Republie jusqu’à 100 paquets par mainteneur (contre 20)', alert: true }
+  - { label: Destruction, value: 'Si rien n’est volé, efface le répertoire personnel', alert: true }
+timeline:
+  - { date: '21.11', label: Premières versions piégées }
+  - { date: '24.11', label: 'Alerte, Zapier et ENS touchés' }
+  - { date: '09.12', label: Tokens classiques npm révoqués, hot: true }
+---
+
+<!-- scaffold, to check against the sources: only what changes from the first wave.
+     Dates: versions published from 21 to 23.11, spotted by Aikido (Charlie Eriksen) on 24.11.
+     Counts differ between sources: 425 (Aikido, first count), 492 (SOCRadar), 700+ (Corgea), 796 (the timeline);
+     25 000+ repositories (Integrity360, Wiz).
+     Trigger: setup_bun.js in preinstall installs the Bun runtime, then runs bun_environment.js: the payload runs
+     before the install finishes, and outside Node.
+     Exfiltration: still TruffleHog, secrets in public repositories described "Sha1-Hulud: The Second Coming."
+     Persistence: registers the machine as a self-hosted GitHub Actions runner named SHA1HULUD (Sysdig), then a
+     workflow on discussions lets the attacker run commands on it.
+     Propagation: up to 100 packages of the account (20 in the first wave), version bumped, republished.
+     Destruction: if it finds no credentials / cannot exfiltrate, it tries to wipe the home directory.
+     Timing: not random. After the first wave, GitHub announced the end of classic npm tokens (plan of 22.09); on
+     09.12 npm revoked all of them for good, leaving granular tokens (90 days max to publish, 2FA by default) and
+     2-hour sessions for npm login (github.blog/changelog/2025-12-09-npm-classic-tokens-revoked-…). The second wave
+     starts on 21.11, 18 days before: the last window to use the long-lived tokens stolen so far.
+     Sources: aikido.dev, sysdig.com, socradar.io, cyberinsider.com, andreafortuna.org (24.11.2025).
+     The title receives the Shai-Hulud 2.0 label of the timeline, as on the event-stream slide -->
+<h1><span style="view-transition-name: shai-hulud-2; view-transition-class: focus-text; display: inline-block; line-height: 1">Shai-Hulud 2.0</span></h1>
+
+<FocusTarget morph="shai-hulud-2" />
+
+::window-1::
+
+<!-- preinstall instead of postinstall, three clicks inside the window: the payload runs as soon as the install
+     starts, even when the install fails afterwards (postinstall then never runs), and before node_modules is filled
+     (the empty box), so it can't count on any dependency and has to bring its own -->
+<AppWindow title="preinstall : avant tout le reste" class="w-[1400px]">
+  <InstallHooks />
+</AppWindow>
+
+::window-1-2::
+
+<!-- how it brings its own: setup_bun.js, run by node, installs Bun with the official script when it is missing
+     (curl -fsSL https://bun.sh/install | bash, powershell on Windows), then runs bun_environment.js with it.
+     Two clicks inside the window. Why Bun: no node_modules needed, and it runs outside Node, which the
+     detection tools watch more (how the analyses explain the choice: to check against the sources) -->
+<AppWindow title="setup_bun.js : apporter son propre runtime" class="w-[1400px]">
+  <BunRuntime />
+</AppWindow>
+
+::window-2::
+
+<!-- the secondary exfiltration, three clicks inside the window: when the payload finds no GitHub token on the
+     machine, it searches GitHub for the repositories whose description is the beacon "Sha1-Hulud: The Second
+     Coming." (left by earlier victims), takes a token out of one of them, and uses it to create a repository on
+     that victim's account holding this machine's secrets. The file inside those repositories that holds the token
+     is not named in the sources I found: to check -->
+<AppWindow title="Exfiltrer sans token : emprunter celui d'une victime" class="w-[1400px]">
+  <SecondaryExfil />
+</AppWindow>
+
+::window-3::
+
+<!-- the backdoor, three clicks inside the window: with a stolen GitHub token, the payload creates a repository
+     (description "Sha1-Hulud: The Second Coming.") and registers the machine as a self-hosted runner named SHA1HULUD;
+     the repository holds .github/workflows/discussion.yaml, which runs on that runner the body of any discussion
+     opened on it: whoever opens a discussion runs a command on the machine. The workflow is simplified on the
+     diagram (Sysdig, "self-hosted GitHub Actions runners as backdoors"): to check against the sources -->
+<AppWindow title="Une porte dérobée : la machine devient un runner GitHub" class="w-[1400px]">
+  <RunnerBackdoor />
+</AppWindow>
+
+---
+transition: view-transition
+---
+
+# Industrialisation de la menace
+
+<script setup>
+import attacks, { recent } from './data/attacks'
+</script>
+
+<!-- back from Shai-Hulud 2.0: same timeline, zoomed from the start with Shai-Hulud 2.0 singled out;
+     the click moves on to september 2025 – august 2026: the axis compresses, eslint-config-prettier and nx
+     slide off to the left, and the attacks of 2026
+     (data/attacks.ts, `recent`) come in from the right; the second click singles out axios, whose name morphs into
+     the title of the next slide.
+     Dates, to check against the sources: trivy 19.03 (trivy-action tags rewritten, v0.69.4, TeamPCP);
+     axios 31.03 (1.14.1 and 0.30.4, maintainer account, RAT through plain-crypto-js, 70 to 100 M / week
+     depending on the source); TanStack 11.05 (84 versions of 42 @tanstack/* packages, valid SLSA provenance, by
+     the Mini Shai-Hulud worm, which first showed up on 29.04 in SAP packages; TeamPCP open-sourced it on GitHub the
+     next day, 12.05); Miasma 01.06 (@redhat-cloud-services, built from the open-sourced code);
+     Mastra 17.06 (Sapphire Sleet, as axios: maintainer account, 140+ packages in about 90 min, fake dependency
+     easy-day-js); keyv, cacheable 04.08 (Shai-Hulud variant from the keyv maintainer's GitHub account, about 440
+     packages and 2 200 versions depending on the source, keyv about 127 M / week) -->
+<ZoomTimeline
+  :events="[...attacks, ...recent]" to="2026-01-01" extend-from="2025-09-01" extend-to="2026-09-01"
+  zoom-from="2025-07-01" zoom-label="été 2025" :reveal="false" :accent="false" :zoom="0" :extend="1"
+  :highlights="[{ name: 'Shai-Hulud 2.0', morph: 'shai-hulud-2' }, { name: 'axios', at: 2, morph: 'axios' }]"
+/>
+
+---
+transition: view-transition
+layout: case
+reveal: 1
+cols: 640px 1fr
+kicker: Affaire · 31 mars 2026
+subject:
+  header: Pièce 06 · paquet npm
+  flag: ■ Piégé
+  name: axios
+  meta: axios@1.14.1, axios@0.30.4 · mars 2026
+  fields:
+    - { label: Téléchargements, value: '100 M / semaine' }
+    - { label: Mainteneur, value: Jason Saayman }
+    - { label: Attribution, value: 'Corée du Nord (UNC1069)', alert: true }
+    - { label: Préparation, value: 'Environ 2 semaines', alert: true }
+modus:
+  - { label: Approche, value: 'Le faux fondateur d’une entreprise clonée, un Slack à son image', at: 'mi-mars', clicks: [1, 2] }
+  - { label: Appel, value: 'Faux Teams dans le navigateur : « un composant n’est pas à jour »' }
+  - { label: Accès, value: 'Un cheval de Troie sur la machine : la 2FA ne protège plus rien', alert: true }
+  - { label: Charge, value: 'axios dépend de plain-crypto-js, qui installe le cheval de Troie', alert: true, at: ['30.03', '31.03'] }
+  - { label: Campagne, value: 'Même scénario tenté sur d’autres mainteneurs (Mocha, Node.js)' }
+timeline:
+  - { date: 'mi-mars', label: Premier contact }
+  - { date: '30.03', label: 'plain-crypto-js publié, version saine' }
+  - { date: '31.03', label: 'Versions piégées, 3 h en ligne', hot: true }
+---
+
+<!-- scaffold, to check against the sources. The lure, from the maintainer's post-mortem (axios/axios#10636, his
+     comment of 02.04): contact about 2 weeks before 31.03 from someone posing as the founder of a real company
+     (branding and founder's likeness cloned; the company is not named); invitation to a real Slack workspace
+     branded like it, with channels sharing LinkedIn posts, fake profiles of the team and of other OSS maintainers;
+     a meeting on MS Teams with "what seemed to be a group of people"; "the meeting said something on my system was
+     out of date. i installed the missing item as i presumed it was something to do with teams, and this was the
+     RAT". "everything was extremely well co-ordinated looked legit and was done in a professional manner."
+     Same playbook as Google's report on UNC1069 (cloud.google.com/blog/topics/threat-intelligence/
+     unc1069-targets-cryptocurrency-ai-social-engineering): hijacked accounts, Calendly, fake Zoom, possibly
+     deepfake video, fake audio issue, "fix" commands. Google attributes axios to UNC1069, Microsoft to Sapphire
+     Sleet: both North Korean. The first contact and the Slack (channel, roles, messages) are a reconstruction:
+     the post-mortem doesn't say on which channel the founder reached out (Socket: LinkedIn or Slack).
+     The two screenshots of the fake Teams are not from the axios call: tayvano posted them in the post-mortem
+     thread (comment of 03.04) among captures of the same campaign over the previous month; names and faces to blur.
+     2FA: it was on; with the RAT, the attacker controls the machine and its sessions. Release: v1 was published
+     through trusted publishing with provenance, the malicious 1.14.1 has neither (published by hand with the stolen
+     credentials, account e-mail changed to a ProtonMail address).
+     Timeline (UTC): plain-crypto-js@4.2.0, a clean copy of crypto-js to give the package a history, 30.03 05:57;
+     4.2.1 with a postinstall dropper (RAT for macOS, Windows, Linux) shortly before; axios@1.14.1 31.03 00:21,
+     0.30.4 around 01:00; issues deleted by the attacker with the stolen account; removed 03:15.
+     Campaign: Pelle Wessman (Mocha) was invited to a fake podcast a few weeks before, with a group, visuals and
+     questions, then a fake connection issue on a fake streaming site to install an app (an infostealer), then a
+     curl command; Socket reports the same outreach to several Node.js maintainers, core contributors included.
+     Sources: github.com/axios/axios/issues/10636, bleepingcomputer.com (04.04.2026), stepsecurity.io.
+     The title receives the axios label of the timeline, as on the event-stream slide -->
+<h1><span style="view-transition-name: axios; view-transition-class: focus-text; display: inline-block; line-height: 1">axios</span></h1>
+
+<FocusTarget morph="axios" />
+
+::window-1::
+
+<!-- the first contact, one click inside the window: the founder's message, then the invitation to the Slack -->
+<AppWindow title="LinkedIn · messagerie">
+  <FirstContact />
+</AppWindow>
+
+::window-1-2::
+
+<!-- the Slack workspace, two clicks inside the window: the members are all fake profiles (team and other OSS
+     maintainers), except the maintainer; then the founder invites him to a call -->
+<AppWindow title="Slack · le workspace de l’entreprise clonée" class="w-[1400px]">
+  <FakeSlack />
+</AppWindow>
+
+::window-2::
+
+<!-- the fake Teams of the same campaign (tayvano, axios/axios#10636): a web page on a lookalike domain, the real
+     Teams lobby, nothing to install yet -->
+<AppWindow title="teams.microscell.com · la salle d’attente">
+  <img src="./assets/axios-fake-teams-lobby.png" class="block h-[720px] mx-auto p-[3px] pt-0" />
+</AppWindow>
+
+::window-2-2::
+
+<!-- in the call, with the others on camera: the "update" to install, which is the malware -->
+<AppWindow title="teams.microscell.com · pendant l’appel">
+  <img src="./assets/axios-fake-teams-update.png" class="block h-[720px] mx-auto p-[3px] pt-0" />
+</AppWindow>
+
+::windows::
+
+<!-- npx, after the mode opératoire (its last row shows at click 16): opens at 17, two clicks inside the window, closes
+     at 20 (Socket, socket.dev/blog/hidden-blast-radius-of-the-axios-compromise): the
+     project's lockfile pins axios, but a tool run with npx (an MCP server, a CLI in CI) resolves its dependencies at
+     each call, from their ranges: firecrawl-mcp@3.11.0 declares axios ^1.13.5 (one of Socket's examples, among
+     @datadog/datadog-ci, wait-on, nx, exa-mcp-server, mcp-atlassian…), which resolved to 1.14.1 during the 3 hours;
+     plain-crypto-js and its postinstall land in ~/.npm/_npx, outside any lockfile. Pinning the tool
+     (npx foo@1.2.3) doesn't pin its dependencies: published packages carry no lockfile. Socket saw a CI pipeline
+     pull the malicious version through npx and contact the C2 during a build step. What they recommend: a
+     dedicated workspace with a lockfile, npm ci, and npx --no --offline -->
+<AppWindow v-click="[17, 20]" title="npx : installé sans jamais être installé" class="open-center w-[1400px]">
+  <NpxResolve :at="17" />
+</AppWindow>
+
+---
+transition: view-transition
+---
+
+# Industrialisation de la menace
+
+<script setup>
+import attacks, { recent } from './data/attacks'
+</script>
+
+<!-- back from axios: same timeline, widened from the start with axios singled out;
+     the click singles out TanStack, whose name morphs into the title of the next slide -->
+<ZoomTimeline
+  :events="[...attacks, ...recent]" to="2026-01-01" extend-from="2025-09-01" extend-to="2026-09-01"
+  zoom-from="2025-07-01" zoom-label="été 2025" :reveal="false" :accent="false" :zoom="0" :extend="0"
+  :highlights="[{ name: 'axios', morph: 'axios' }, { name: 'TanStack', at: 1, morph: 'tanstack' }]"
+/>
+
+---
+transition: view-transition
+layout: case
+reveal: 1
+cols: 640px 1fr
+kicker: Affaire · 11 mai 2026
+subject:
+  header: Pièce 07 · paquets npm
+  flag: ■ Piégé
+  name: TanStack
+  meta: 84 versions de 42 paquets @tanstack/* · mai 2026
+  fields:
+    - { label: Téléchargements, value: '12,7 M / sem. (react-router)' }
+    - { label: Paquets piégés, value: '42 (84 versions)' }
+    - { label: Token npm volé, value: Aucun, alert: true }
+    - { label: Provenance, value: 'Valide (SLSA niveau 3)', alert: true }
+modus:
+  - { label: Porte d'entrée, value: 'Pwn Request : bundle-size.yml exécute le code d’une PR', at: '12h49', clicks: [0, 2] }
+  - { label: Empoisonnement, value: 'La PR réécrit le cache que la release restaure', alert: true, at: ['13h29', '13h31'], clicks: [0, 4] }
+  - { label: Publication, value: 'Token OIDC lu dans la mémoire du runner', alert: true, at: '21h20' }
+  - { label: Charge, value: 'Ver Mini Shai-Hulud : vole les secrets, republie les paquets de la victime' }
+  - { label: Détection, value: 'Signalé 26 min après, par StepSecurity', at: '21h46' }
+timeline:
+  - { date: '12h49', label: PR n° 7378 ouverte }
+  - { date: '13h29', label: Cache empoisonné }
+  - { date: '13h31', label: PR vidée et refermée }
+  - { date: '21h20', label: Versions piégées publiées, hot: true }
+  - { date: '21h46', label: Alerte de StepSecurity }
+---
+
+<!-- scaffold, to check against the sources. Times of 11 May 2026, Paris time (UTC+2), from the TanStack postmortem
+     (tanstack.com/blog/npm-supply-chain-compromise-postmortem, times in UTC): fork of TanStack/router created on 10.05
+     at 19h16, renamed zblgg/configuration to stay out of fork searches; malicious commit at 01h29 by a forged
+     identity "claude <claude@users.noreply.github.com>", [skip ci]; PR #7378 "WIP: simplify history build" at 12h49;
+     bundle-size.yml and labeler.yml (pull_request_target) run without approval, pr.yml (pull_request) waits for an
+     approval that never comes; force-push of the malicious commit at 13h11, the benchmark job builds it
+     (vite_setup.mjs, ~30 000 lines); cache entry Linux-pnpm-store-6f92… (1.1 GB) saved at 13h29, scope main;
+     PR force-pushed back to main's HEAD (0 files) and closed at 13h31: the poison stays.
+     Detonation: at 21h15 a release run is re-run, and at 21h16 a merge to main starts another: both restore the
+     poisoned store. The tests fail, so the Publish step is skipped, but the payload, during the tests, reads the
+     Runner.Worker process memory (/proc/<pid>/mem, the script of the tj-actions compromise of March 2025, copied
+     verbatim), takes the OIDC token minted for id-token: write and publishes straight to registry.npmjs.org: 42
+     versions at 21h20, 42 more at 21h26. Trusted publishing, so valid provenance: the attestation says the truth,
+     the release workflow of TanStack/router on main did publish them.
+     Why the read-only permissions didn't help: the post-job save of actions/cache uses a token internal to the
+     runner, not GITHUB_TOKEN; and the cache is shared by the whole repository, pull_request_target runs included
+     (they run in the base repository's scope). Known since Adnan Khan, "The Monsters in Your Build Cache" (May 2024).
+     The key only depends on the lockfile: a PR that doesn't touch pnpm-lock.yaml computes the key main uses.
+     Payload: optionalDependencies "@tanstack/setup": "github:tanstack/router#79ac49ee…" (an orphan commit of the
+     fork network, reachable through the main repository's name), its prepare script runs router_init.js (2.3 MB):
+     cloud, Kubernetes, Vault, GitHub, npm, SSH secrets, exfiltrated over the Session messenger network, then
+     republishes the victim's other packages.
+     Detection: issue #7383 by ashishkurmi (StepSecurity) at 21h46; deprecations from 22h19 to 23h03; tarballs
+     removed by npm from 00h13 to 01h55 (no unpublish possible: the packages have dependents).
+     Cache step: TanStack/config, .github/setup/action.yml at commit d8cef73 (the version before the attack);
+     the caching was removed after it.
+     The title receives the TanStack label of the timeline, as on the event-stream slide -->
+<h1><span style="view-transition-name: tanstack; view-transition-class: focus-text; display: inline-block; line-height: 1">TanStack</span></h1>
+
+<FocusTarget morph="tanstack" />
+
+<style>
+/* a long excerpt: smaller code, so that the window fits under the status bar */
+.dense {
+  --slidev-code-font-size: 22px;
+  --slidev-code-line-height: 32px;
+}
+</style>
+
+::window-1::
+
+<!-- bundle-size.yml as it was before the attack (TanStack/router at d296252), abridged: the comment states the
+     intended split; benchmark-pr runs the PR's merge ref with read-only permissions and no persisted credentials,
+     comment-pr runs main's code with the right to comment -->
+<AppWindow title="TanStack/router · .github/workflows/bundle-size.yml (extrait)" class="dense w-[1400px]">
+
+```yaml {2-4,13,15}
+on:
+  # We use `pull_request_target` to split trust boundaries across jobs:
+  # - `benchmark-pr` checks out PR merge code and runs it as untrusted with read-only permissions.
+  # - `comment-pr` runs trusted base-repo code with limited write access to upsert the PR comment.
+  pull_request_target:
+permissions:
+  contents: read
+jobs:
+  benchmark-pr:
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          ref: refs/pull/${{ github.event.pull_request.number }}/merge
+          persist-credentials: false
+      - uses: TanStack/config/.github/setup@main
+      - run: pnpm nx run @benchmarks/bundle-size:build
+  comment-pr:
+    needs: benchmark-pr
+    permissions:
+      pull-requests: write
+```
+
+</AppWindow>
+
+::window-1-2::
+
+<!-- the split, two clicks inside the window: it holds for the GITHUB_TOKEN, but the untrusted job sets up its
+     tools with the shared setup action, which caches the pnpm store; at the end of the job, actions/cache saves it
+     into the repository's cache (pull_request_target runs in the base repository, so in main's cache scope), with a
+     token internal to the runner that `permissions` doesn't restrict -->
+<AppWindow title="Deux jobs pour séparer la confiance" class="w-[1400px]">
+  <JobSplit />
+</AppWindow>
+
+::window-2::
+
+<!-- the cache step of the shared setup action, called by every workflow of the repository, bundle-size.yml (PR)
+     and release.yml (main) included: the key only depends on the lockfile -->
+<AppWindow title="TanStack/config · .github/setup/action.yml" class="w-[1400px]">
+
+```yaml {5}
+    - name: Setup pnpm cache
+      uses: actions/cache@v5.0.4
+      with:
+        path: ${{ env.STORE_PATH }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-
+```
+
+</AppWindow>
+
+::window-2-2::
+
+<!-- the poisoning, four clicks inside the window: the PR run builds the PR's code, which writes into the pnpm
+     store; the cache action saves it under main's key; the release restores it, the code in it reads the OIDC token
+     in the runner's memory and gets a certificate from Sigstore's authority (Fulcio), issued to the identity of
+     release.yml on main; that certificate signs the provenance of the versions published to npm, which is valid:
+     it says the truth, the release workflow of TanStack/router on main did publish them -->
+<AppWindow title="Un cache partagé entre la PR et la release" class="w-[1400px]">
+  <CachePoison />
+</AppWindow>
+
+---
+transition: view-transition
+---
+
+# Eté 2025 : le tournant
+
+<script setup>
+import attacks, { recent } from './data/attacks'
+</script>
+
+<!-- back from TanStack: same timeline, widened from the start with TanStack singled out -->
+<ZoomTimeline
+  :events="[...attacks, ...recent]" to="2026-01-01" extend-from="2025-09-01" extend-to="2026-09-01"
+  zoom-from="2025-07-01" zoom-label="été 2025" :reveal="false" :accent="false" :zoom="0" :extend="0"
+  :highlights="[{ name: 'TanStack', morph: 'tanstack' }]"
+/>
+
+---
+
+# Shai-Hulud en open source
+
+<!-- to check against the sources. On 12.05, the day after TanStack, TeamPCP published the source of its
+     worm on GitHub through three likely compromised accounts, under the MIT license; commits by "TeamPCP_OSS",
+     dated 2099-01-01. README lines quoted in the reports: "Shai-Hulud: Open Sourcing The Carnage", "Is it vibe
+     coded? Yes. Does it work? Let results speak.", "Change keys and C2 as needed. Love - TeamPCP"; the rest of the
+     README (deployment instructions) is not visible in the capture; the owner is hidden. The capture shows 26 forks
+     and 15 stars, the description "Shai-Hulud: Here We Go Again - Let the Carnage Continue. A Gift From TeamPCP",
+     3 commits by TeamPCP_OSS. GitHub took the repositories down, but forks were already there (The Register: 5 and 39 at the time
+     of its check). Ox Security: other actors started modifying it within hours (a fork adding FreeBSD support).
+     Contest, announced on 15.05 on BreachForums by its owner, diencracked ("BreachForums + TeamPCP - The Supply
+     Chain Competition", capture by DarkWebInformer; Krebs mentions Telegram too): $1,000 in Monero, scored on the weekly and
+     monthly downloads of the packages compromised; Dataminr: a recruiting operation, TeamPCP meant to buy the
+     accesses. Then: @antv on 19.05 (323 packages, 639 versions in about an hour, from the atool maintainer
+     account), Miasma on 01.06 (@redhat-cloud-services, 32 packages), keyv and cacheable on 04.08 (≈ 440 packages).
+     Two alleged TeamPCP members, 21 and 23, were arrested in Western Australia on 26.08 (Krebs).
+     Sources: theregister.com (13.05.2026), ox.security, securitylabs.datadoghq.com, securityweek.com,
+     krebsonsecurity.com (27.08.2026), socket.dev, chainguard.dev -->
+
+<!-- three windows over each other, one per click: the contest announced on BreachForums (capture), the repository
+     (capture, owner hidden), the waves after the publication -->
+<div class="flex-1 grid place-items-center">
+  <AppWindow v-click="1" class="open-center col-start-1 row-start-1 translate-x-[340px] translate-y-[60px]" title="BreachForums · The Supply Chain Competition">
+    <img src="./assets/breach-forums.avif" class="block h-[560px] p-[3px] pt-0" />
+  </AppWindow>
+  <AppWindow v-click="2" class="open-center col-start-1 row-start-1 -translate-x-[220px] -translate-y-[20px]" title="github.com · Shai-Hulud-Open-Source">
+    <img src="./assets/shai-hulud-open-source-github.png" class="block h-[700px] p-[3px] pt-0" />
+  </AppWindow>
+  <AppWindow v-click="3" class="open-center col-start-1 row-start-1 w-[1300px] translate-y-[40px]" title="Après la publication">
+    <WormStats />
+  </AppWindow>
+</div>

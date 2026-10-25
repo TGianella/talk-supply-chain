@@ -13,3 +13,13 @@ export default [
   { date: '2025-09-15', name: 'Shai-Hulud', text: '500+ paquets contaminés' },
   { date: '2025-11-24', name: 'Shai-Hulud 2.0', text: '796 paquets contaminés' },
 ]
+
+// After 2025: the attacks of 2026, shown when the timeline widens past the summer of 2025 (last timeline slide)
+export const recent = [
+  { date: '2026-03-19', name: 'trivy', text: 'Un scanner de sécurité piégé' },
+  { date: '2026-03-31', name: 'axios', text: '100 M de téléchargements / sem.' },
+  { date: '2026-05-11', name: 'TanStack', text: 'Ver Mini Shai-Hulud, code rendu public' },
+  { date: '2026-06-01', name: 'Miasma', text: 'Un clone de Mini Shai-Hulud' },
+  { date: '2026-06-17', name: 'Mastra', text: '140+ paquets en 90 min' },
+  { date: '2026-08-04', name: 'keyv, cacheable', text: '127 M de téléchargements / sem.' },
+]

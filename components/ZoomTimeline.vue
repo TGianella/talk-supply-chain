@@ -2,7 +2,7 @@
 // Slidev remounts every slide when it switches between a view transition and a normal one (here, on
 // the first click after a view transition). What a timeline showed last is kept per slide, so that
 // once remounted it starts from there and still animates to the new state.
-const memory = new Map<string, { state: 'idle' | 'sweep' | 'shown', zoomed: boolean, focused: string | null }>()
+const memory = new Map<string, { state: 'idle' | 'sweep' | 'shown', zoomed: boolean, extended: boolean, focused: string | null }>()
 </script>
 
 <script setup lang="ts">
@@ -10,6 +10,10 @@ const memory = new Map<string, { state: 'idle' | 'sweep' | 'shown', zoomed: bool
 // At click `zoom`, the period widens to the full width, the events before it slide off to the left,
 // the markers piled up in the period spread out along the axis, and their labels show.
 // Going back plays the zoom out. Without `zoom`, the timeline doesn't zoom.
+// At click `extend`, once zoomed, the view moves on to the period from `extend-from` (default: `zoom-from`)
+// to `extend-to`: the axis compresses, the events before `extend-from` slide off to the left, and the events
+// after `to` come in from the right (set `to`, otherwise it is after them).
+// The labels of the zoomed period are then placed for the new period. Not combined with `trail`.
 // At click `trail`, once zoomed, small dots pop from left to right around the axis after the events named
 // in `trail-after` (default: the last one), up to the next event or the edge of the slide: scattered, denser
 // right after the event, one every `trail-gap` px on average. The attacks go on.
@@ -30,6 +34,7 @@ const memory = new Map<string, { state: 'idle' | 'sweep' | 'shown', zoomed: bool
 // ]" />
 // Dates are ISO ('2018-11-26'). Labels go in lanes above and below the axis, picked automatically;
 // `lane` forces one (1, 2… above, -1, -2… below). `muted` is for events that are not attacks.
+// The events of the zoomed period are in the accent color; with `:accent="false"`, only highlighted ones are.
 // The timeline spans the whole slide width (it bleeds into the gutters), the dates between the gutters.
 // When the slide is entered, the timeline reveals itself from left to right: the axis draws itself,
 // and the ticks, markers and labels show as it reaches them; the piled up markers stack one by one.
@@ -45,12 +50,16 @@ const props = withDefaults(defineProps<{
   zoomTo?: string
   zoomLabel?: string
   zoom?: number
+  extend?: number
+  extendFrom?: string
+  extendTo?: string // end of the widened period, defaults to January 1st after the last event
   trail?: number
   trailAfter?: string[]
   trailGap?: number
   highlights?: { name: string | string[], at?: number, morph?: string }[]
   reveal?: boolean
-}>(), { highlights: () => [], reveal: true, trailGap: 16 })
+  accent?: boolean
+}>(), { highlights: () => [], reveal: true, accent: true, trailGap: 16 })
 
 const SW = 1920 // slide width
 const PAD = 120 // the time range maps to [PAD, SW - PAD]
@@ -74,6 +83,8 @@ const a0 = props.from ? year(props.from) : Math.floor(Math.min(...ts))
 const a1 = props.to ? year(props.to) : Math.floor(Math.max(...ts)) + 1
 const b0 = year(props.zoomFrom)
 const b1 = props.zoomTo ? year(props.zoomTo) : a1
+const c0 = props.extendFrom ? year(props.extendFrom) : b0
+const c1 = props.extendTo ? year(props.extendTo) : Math.floor(Math.max(...ts)) + 1
 
 // scales (px per year) before and after the zoom. The zoom interpolates the scale exponentially
 // around the date p that keeps the same position in both views, at X: x = X + (t - p) * s0 * r^z
@@ -83,6 +94,10 @@ const p = (a0 * s0 - b0 * s1) / (s0 - s1)
 const X = PAD + (p - a0) * s0
 const x0 = (t: number) => PAD + (t - a0) * s0
 const x1 = (t: number) => PAD + (t - b0) * s1
+// widened: as for the zoom, the scale shrinks by q = s2 / s1 around the date that keeps its position, at Y
+const s2 = props.extend != null ? (SW - 2 * PAD) / (c1 - c0) : s1
+const x2 = (t: number) => PAD + (t - c0) * s2
+const Y = s1 === s2 ? PAD : x1((b0 * s1 - c0 * s2) / (s1 - s2))
 
 const month = new Intl.DateTimeFormat('fr', { month: 'short', timeZone: 'UTC' })
 const day = (iso: string) => new Date(`${iso}T00:00:00Z`)
@@ -90,16 +105,22 @@ const day = (iso: string) => new Date(`${iso}T00:00:00Z`)
 const items = props.events.map((e, i) => {
   const t = ts[i]
   const zoomed = t >= b0 && t <= b1
+  const later = props.extend != null && t > b1 // shows once widened
   const d = day(e.date)
-  const date = zoomed ? `${d.getUTCDate()} ${month.format(d)}` : `${month.format(d)} ${d.getUTCFullYear()}`
+  const date = zoomed || later ? `${d.getUTCDate()} ${month.format(d)}` : `${month.format(d)} ${d.getUTCFullYear()}`
   // rough label width: name in the title font 26px, mono date 18px, sans text 20px, plus the padding
   const w = 16 + Math.max(e.name.length * 14.6, date.length * 11.5, (e.text?.length ?? 0) * 10.4)
-  return { ...e, i, t, zoomed, date, w, x: zoomed ? x1(t) : x0(t), level: 0, slot: 1, right: false }
+  // position used to place the label, and the positions where it has to fit in the slide (once widened,
+  // the events before `extend-from` are off the slide)
+  const wide = props.extend != null && (zoomed || later)
+  const x = wide ? x2(t) : zoomed ? x1(t) : x0(t)
+  const xs = [...(wide && t >= c0 ? [x2(t)] : []), ...(zoomed ? [x1(t)] : []), ...(!wide && !zoomed ? [x] : [])]
+  return { ...e, i, t, zoomed, later, date, w, x, xs, level: 0, slot: 1, right: false }
 })
 
 // before the zoom, markers too close to each other pile up, each on the lowest free level
 const levels: number[] = []
-for (const it of [...items].sort((a, b) => a.t - b.t)) {
+for (const it of [...items].filter(it => !it.later).sort((a, b) => a.t - b.t)) {
   const x = x0(it.t)
   let k = levels.findIndex(end => x - end >= M + 6)
   if (k < 0)
@@ -150,11 +171,13 @@ function place(list: Item[], obstacles: Box[]) {
     placed.set(it, { lane, l, r })
   }
 
-  for (const it of [...list].sort((a, b) => b.x - a.x)) {
-    const fits = (right: boolean) => right ? it.x - it.w > PAD / 2 : it.x + it.w < SW - PAD / 2
-    // labels are placed from right to left: a label covering the dates of later events is checked
-    // against their poles, but one covering earlier dates in the first lane would leave them no lane
-    // on that side (from the second lane, they can still go under it)
+  // labels are placed from right to left, each on the first free option in its order of preference
+  const order = [...list].sort((a, b) => b.x - a.x)
+  const ranked = order.map((it) => {
+    const fits = (right: boolean) => it.xs.every(x => right ? x - it.w > PAD / 2 : x + it.w < SW - PAD / 2)
+    // a label covering the dates of later events is checked against their poles, but one covering
+    // earlier dates in the first lane would leave them no lane on that side (from the second lane,
+    // they can still go under it): those options come last
     const clear = (right: boolean) => {
       const [l, r] = span(it, right)
       return !list.some(o => o.x < it.x && o.x > l - POLE && o.x < r + POLE)
@@ -164,10 +187,33 @@ function place(list: Item[], obstacles: Box[]) {
       sides.push(it.x > SW / 2)
     const lanes = it.lane ? [it.lane] : [1, -1, 2, -2, 3, -3, 4, -4]
     const options = lanes.flatMap(lane => sides.map(right => ({ lane, right })))
-    const pick = options.find(o => (Math.abs(o.lane) > 1 || clear(o.right)) && free(it, o.lane, o.right))
-      ?? options.find(o => free(it, o.lane, o.right))
-      ?? options[0]
-    put(it, pick.lane, pick.right)
+    const first = (o: typeof options[number]) => Math.abs(o.lane) > 1 || clear(o.right)
+    return [...options.filter(first), ...options.filter(o => !first(o))]
+  })
+  // when a label has no free option left, the labels before it move to their next options (backtracking)
+  let budget = 50000
+  const solve = (k: number): boolean => {
+    if (k === order.length)
+      return true
+    for (const o of ranked[k]) {
+      if (budget-- <= 0)
+        return false
+      if (!free(order[k], o.lane, o.right))
+        continue
+      put(order[k], o.lane, o.right)
+      if (solve(k + 1))
+        return true
+      placed.delete(order[k])
+    }
+    return false
+  }
+  // too crowded: each label on its first free option, or its preferred one
+  if (!solve(0)) {
+    placed.clear()
+    order.forEach((it, k) => {
+      const pick = ranked[k].find(o => free(it, o.lane, o.right)) ?? ranked[k][0]
+      put(it, pick.lane, pick.right)
+    })
   }
 
   // the first pass can leave a label above an empty lane: bring it down while it fits
@@ -185,11 +231,11 @@ function place(list: Item[], obstacles: Box[]) {
     }
   }
 }
-place(items.filter(it => !it.zoomed), [
+place(items.filter(it => !it.zoomed && !it.later), [
   ...items.filter(it => it.level > 0).map(it => ({ l: x0(it.t) - M / 2, r: x0(it.t) + M / 2, h: it.level * STEP + M / 2 })),
   ...(props.zoomLabel ? [{ l: zoomL, r: zoomR, h: bracketH + 40 }] : []),
 ])
-place(items.filter(it => it.zoomed), [])
+place(items.filter(it => it.zoomed || it.later), [])
 
 // trailing dots, zoomed: between an event and the next one (or the edge of the slide), at a distance from
 // the event drawn from an exponential distribution cut at the next one (most of them in the first third),
@@ -214,15 +260,16 @@ const down = Math.max(0, ...items.map(it => -it.slot))
 const axisY = Math.max(BASE + up * LH, bracketH + 48)
 const height = axisY + (down ? BASE_DOWN + down * LH : 48)
 
-// scale: years, and the months of the zoomed period (January shows the year)
+// scale: years, and the months of the zoomed period, widened or not (January shows the year)
+const bEnd = props.extend != null ? Math.max(b1, c1) : b1
 const years: number[] = []
-for (let y = Math.ceil(a0); y <= Math.floor(a1); y++)
+for (let y = Math.ceil(a0); y <= Math.floor(Math.max(a1, bEnd)); y++)
   years.push(y)
 const months: { t: number, label: string }[] = []
-for (let y = Math.floor(b0); y <= Math.floor(b1); y++) {
+for (let y = Math.floor(b0); y <= Math.floor(bEnd); y++) {
   for (let m = 1; m < 12; m++) {
     const t = year(`${y}-${m + 1}-01`)
-    if (t >= b0 && t <= b1)
+    if (t >= b0 && t <= bEnd)
       months.push({ t, label: month.format(Date.UTC(y, m, 1)) })
   }
 }
@@ -261,12 +308,13 @@ const released = ref(false)
 let arrival: ReturnType<typeof setTimeout> | undefined
 
 const zoomNow = computed(() => props.zoom != null && $clicks.value >= props.zoom)
+const extendNow = computed(() => props.extend != null && $clicks.value >= props.extend)
 // the highlight of the current click: the last one started, unless a later highlight or the zoom ended it
 // each highlight goes by a key, its names joined
 const marks = props.highlights
   .map(h => ({ at: 0, ...h, names: [h.name].flat(), key: [h.name].flat().join('\n') }))
   .sort((a, b) => a.at - b.at)
-const ends = [...marks.map(h => h.at), ...(props.zoom != null ? [props.zoom] : [])]
+const ends = [...marks.map(h => h.at), ...[props.zoom, props.extend].filter((c): c is number => c != null)]
 const back = marks.find(h => h.at === 0 && h.morph) // the highlight you come back to
 const focusNow = computed(() => {
   const c = $clicks.value
@@ -290,6 +338,7 @@ watch(onScreen, (on) => {
   }
 })
 const zoomed = ref(last?.zoomed ?? zoomNow.value)
+const extended = ref(last?.extended ?? extendNow.value)
 const focused = ref(last ? last.focused : focusNow.value)
 // the event styled as highlighted: the current one, or the last one while its highlight fades out
 const shown = ref(focused.value)
@@ -299,12 +348,13 @@ const framed = new Set(marks.flatMap(h => h.names))
 const root = ref<HTMLElement>()
 onMounted(() => {
   root.value?.getBoundingClientRect()
-  watch([zoomNow, focusNow], ([z, f]) => {
+  watch([zoomNow, extendNow, focusNow], ([z, e, f]) => {
     zoomed.value = z
+    extended.value = e
     focused.value = f
   }, { immediate: true })
 })
-watch([state, zoomed, focused], ([s, z, f]) => memory.set(key, { state: s, zoomed: z, focused: f }), { immediate: true })
+watch([state, zoomed, extended, focused], ([s, z, e, f]) => memory.set(key, { state: s, zoomed: z, extended: e, focused: f }), { immediate: true })
 </script>
 
 <template>
@@ -313,19 +363,21 @@ watch([state, zoomed, focused], ([s, z, f]) => memory.set(key, { state: s, zoome
     class="zoom-timeline"
     :data-reveal="state"
     :data-zoomed="zoomed || undefined"
+    :data-extended="extended || undefined"
     :data-focus="focused || undefined"
     :data-arriving="arriving || undefined"
-    :style="{ '--X': X, '--s0': s0, '--r': s1 / s0, 'height': `${height}px`, '--axis': `${axisY}px`, '--sweep': `${SWEEP}s` }"
+    :style="{ '--X': X, '--s0': s0, '--r': s1 / s0, '--q': s2 / s1, '--Y': Y, 'height': `${height}px`, '--axis': `${axisY}px`, '--sweep': `${SWEEP}s` }"
   >
     <i v-for="h in marks.filter(h => h.at > 0)" :key="h.key" v-click="h.at" class="step" />
     <i v-if="zoom" v-click="zoom" class="step" />
+    <i v-if="extend" v-click="extend" class="step" />
     <div v-if="trail" v-click="trail" class="trail">
       <i v-for="(d, k) in dots" :key="k" class="dot" :style="{ left: `${d.x}px`, top: `calc(var(--axis) + ${d.y}px)`, '--k': k }" />
     </div>
     <i class="axis" />
 
     <!-- scale -->
-    <div v-for="y in years" :key="y" class="at" :style="at(y)">
+    <div v-for="y in years" :key="y" class="at" :class="{ in: y > a1 }" :style="at(y)">
       <i class="tick" />
       <span class="scale">{{ y }}</span>
     </div>
@@ -350,12 +402,12 @@ watch([state, zoomed, focused], ([s, z, f]) => memory.set(key, { state: s, zoome
       v-for="it in items"
       :key="it.i"
       class="at"
-      :class="{ hot: it.zoomed, muted: it.muted, focus: among(shown, it.name), dim: !among(shown, it.name) }"
+      :class="{ hot: accent && (it.zoomed || it.later), later: it.later, muted: it.muted, focus: among(shown, it.name), dim: !among(shown, it.name) }"
       :style="{ ...at(it.t), '--level': it.level }"
     >
       <div
         class="flag"
-        :class="[it.zoomed ? 'in' : 'out', it.slot > 0 ? 'up' : 'down', { right: it.right }]"
+        :class="[it.zoomed || it.later ? 'in' : 'out', it.slot > 0 ? 'up' : 'down', { right: it.right }]"
         :style="{ '--offset': `${it.slot > 0 ? BASE + (it.slot - 1) * LH : BASE_DOWN + (-it.slot - 1) * LH}px` }"
       >
         <div class="label">
@@ -379,6 +431,13 @@ watch([state, zoomed, focused], ([s, z, f]) => memory.set(key, { state: s, zoome
 <style>
 /* registered so that it can be transitioned: 0 before the zoom, 1 after */
 @property --z {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+/* the same for the widening: 0 before, 1 after */
+@property --e {
   syntax: '<number>';
   inherits: true;
   initial-value: 0;
@@ -416,16 +475,21 @@ watch([state, zoomed, focused], ([s, z, f]) => memory.set(key, { state: s, zoome
 <style scoped>
 .zoom-timeline {
   --z: 0;
+  --e: 0;
   position: relative;
   flex: none;
   margin: auto calc(-1 * var(--hud-gutter));
   overflow-x: clip;
   mask-image: linear-gradient(to right, transparent, #000 80px, #000 calc(100% - 80px), transparent);
-  transition: --z 1.8s cubic-bezier(0.65, 0, 0.35, 1);
+  transition: --z 1.8s cubic-bezier(0.65, 0, 0.35, 1), --e 1.8s cubic-bezier(0.65, 0, 0.35, 1);
 }
 
 .zoom-timeline[data-zoomed] {
   --z: 1;
+}
+
+.zoom-timeline[data-extended] {
+  --e: 1;
 }
 
 /* only there to count the clicks */
@@ -444,12 +508,12 @@ watch([state, zoomed, focused], ([s, z, f]) => memory.set(key, { state: s, zoome
   transform-origin: left;
 }
 
-/* anchor at a date on the axis */
+/* anchor at a date on the axis; the widening scales the distance to Y by q */
 .at {
   position: absolute;
   left: 0;
   top: var(--axis);
-  transform: translateX(calc((var(--X) + var(--dt) * var(--s0) * pow(var(--r), var(--z))) * 1px));
+  transform: translateX(calc((var(--Y) + (var(--X) - var(--Y) + var(--dt) * var(--s0) * pow(var(--r), var(--z))) * pow(var(--q), var(--e))) * 1px));
 }
 
 .tick {
@@ -532,6 +596,11 @@ watch([state, zoomed, focused], ([s, z, f]) => memory.set(key, { state: s, zoome
 .hot .marker {
   background: var(--hud-accent);
   box-shadow: none;
+}
+
+/* the events after the zoomed period show only once zoomed (their labels are .in) */
+.later .marker {
+  opacity: clamp(0, var(--z) * 3 - 2, 1);
 }
 
 .muted .marker {
