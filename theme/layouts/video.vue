@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useSlideContext } from '@slidev/client'
 import { computed, ref, watch } from 'vue'
+import { withBase } from '../utils/base'
 
 // Full-screen video (files go in public/, e.g. src: /intro.mp4).
 // It starts from the beginning when the slide is shown and pauses when you leave.
@@ -43,8 +44,8 @@ function onEnded() {
   <div class="slidev-layout video">
     <video
       ref="video"
-      :src="src"
-      :poster="poster"
+      :src="withBase(src)"
+      :poster="withBase(poster)"
       :muted="muted"
       :loop="loop"
       :style="{ objectFit: fit }"

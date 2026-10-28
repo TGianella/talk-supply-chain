@@ -30,6 +30,6 @@ Slides for a talk about supply chain security in the npm ecosystem, built with [
   - `setup/shiki.ts`: code highlighting theme.
   - `themeConfig` keys read by the theme: `dossier` (status bar prefix), `speaker`, `org` (cover), `parts` (agenda on section slides), `defenses` and `platforms` (actors of the series shown as a chain on `defense` slides).
 - `components/`: project-level Vue components, auto-imported and usable directly in `slides.md`.
-- `public/`: static assets, referenced from slides with absolute paths (`/image.png`).
+- `public/`: static assets, referenced from slides with absolute paths (`/image.png`). The deck is deployed under a base (`/talk-supply-chain/` on GitHub Pages): static `src="/…"` in templates get it through `transformAssetUrls.includeAbsolute` in `vite.config.ts`, and a component or layout binding such a path from a prop wraps it in `withBase` (`theme/utils/base.ts`).
 - `patches/@slidev__client.patch` (pnpm `patchedDependencies`): a click inside a slide no longer changes the view-transition mode of the slideshow. Without it, every click on a slide with `transition: view-transition` remounts the slide (the container switches between a div and a TransitionGroup), so v-click elements flash and lose their transitions. Check it still applies when upgrading Slidev.
 - `design.pen`: Pencil design file where slide designs are drafted before being implemented in Slidev. It is encrypted: access it only through the Pencil MCP tools, never with Read/Grep. Draft slides as 1920×1080 frames (16:9, the same ratio as the Slidev canvas).

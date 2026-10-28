@@ -4,6 +4,7 @@ import { computed, defineComponent, onMounted, provide, ref, useSlots, watch } f
 import HudFrame from '../components/HudFrame.vue'
 import Kicker from '../components/Kicker.vue'
 import SeriesChain from '../components/SeriesChain.vue'
+import { withBase } from '../utils/base'
 
 // Changes told one by one, each kept as a card: title (h1) in the default slot, the cards (2 to 5 fit,
 // on two rows: two per row up to four, bigger, 3 + 2 for five) from `cards`. Header like the defense layout: `series` names
@@ -134,7 +135,7 @@ watch($clicks, measure, { flush: 'post' })
             </div>
             <div v-if="c.img || $slots[`thumb-${i + 1}`]" class="thumb">
               <slot :name="`thumb-${i + 1}`">
-                <img :src="c.img" alt="" :style="{ objectPosition: c.position }">
+                <img :src="withBase(c.img)" alt="" :style="{ objectPosition: c.position }">
               </slot>
             </div>
             <div class="text">{{ c.label }}</div>

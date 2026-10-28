@@ -4,6 +4,7 @@ import Fingerprint from '../components/Fingerprint.vue'
 import HudFrame from '../components/HudFrame.vue'
 import Kicker from '../components/Kicker.vue'
 import Stamp from '../components/Stamp.vue'
+import { withBase } from '../utils/base'
 
 // Closing slide. Title (h1) and subtitle (p) in the default slot.
 // `contacts` is a label → value map, e.g. { Slides: 'example.com', Contact: '@handle' }.
@@ -31,7 +32,7 @@ const props = withDefaults(defineProps<{
     <div v-if="props.qrcodes.length" class="qrcodes">
       <figure v-for="q in props.qrcodes" :key="q.label" class="qrcode">
         <div class="code">
-          <img v-if="q.img" :src="q.img" :alt="q.label">
+          <img v-if="q.img" :src="withBase(q.img)" :alt="q.label">
           <span v-else class="placeholder">QR</span>
         </div>
         <figcaption>

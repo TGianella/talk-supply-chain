@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useSlideContext } from '@slidev/client'
 import { onMounted, ref, watch } from 'vue'
+import { withBase } from '../theme/utils/base'
 
 // Points told one by one: each opens as a large photo window over the area, then on the next click the
 // window flies onto the thumbnail of its row and folds as it lands, and the row (label, short statement)
@@ -66,7 +67,7 @@ watch($clicks, measure, { flush: 'post' })
       >
         <div :ref="el => thumbEls[i] = el as HTMLElement" class="thumb">
           <slot :name="`thumb-${i + 1}`">
-            <img v-if="r.img" :src="r.img" alt="" :style="{ objectPosition: r.position }">
+            <img v-if="r.img" :src="withBase(r.img)" alt="" :style="{ objectPosition: r.position }">
           </slot>
         </div>
         <div class="text">
@@ -87,7 +88,7 @@ watch($clicks, measure, { flush: 'post' })
       >
         <slot :name="`window-${i + 1}`">
           <AppWindow :title="r.title ?? r.label">
-            <img :src="r.img" alt="" class="photo" :data-fit="r.fit ? '' : undefined" :style="{ objectPosition: r.position }">
+            <img :src="withBase(r.img)" alt="" class="photo" :data-fit="r.fit ? '' : undefined" :style="{ objectPosition: r.position }">
             <div v-if="r.credit" class="credit">{{ r.credit }}</div>
           </AppWindow>
         </slot>

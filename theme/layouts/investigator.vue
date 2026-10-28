@@ -2,6 +2,7 @@
 import HudCorners from '../components/HudCorners.vue'
 import HudFrame from '../components/HudFrame.vue'
 import Kicker from '../components/Kicker.vue'
+import { withBase } from '../utils/base'
 
 // Introduction of the speaker. Name (h1) in the default slot, `fields` (label → value) listed under it.
 // The portrait on the right shows `photo` (path in public/), a silhouette without one.
@@ -30,7 +31,7 @@ defineProps<{
       <span class="coord">Sujet 01  //  X 1240  Y 0250</span>
       <HudCorners padding="24px">
         <div class="photo">
-          <img v-if="photo" :src="photo" alt="">
+          <img v-if="photo" :src="withBase(photo)" alt="">
           <svg v-else class="person" viewBox="0 0 24 24" aria-hidden="true">
             <path fill="currentColor" d="M9.877 10.508Q9 9.63 9 8.385t.877-2.123T12 5.385t2.123.877T15 8.385t-.877 2.123t-2.123.877t-2.123-.877M5 18.616v-1.647q0-.619.36-1.158q.361-.54.97-.838q1.416-.679 2.834-1.018q1.417-.34 2.836-.34t2.837.34t2.832 1.018q.61.298.97.838q.361.539.361 1.158v1.646z" />
           </svg>

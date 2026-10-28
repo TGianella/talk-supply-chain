@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useSlideContext } from '@slidev/client'
 import { computed } from 'vue'
+import { withBase } from '../utils/base'
 
 // Full-screen greyscale shot, for an opening sequence in the style of a TV crime series.
 // `image`: photo (public/, e.g. /photos/intro-email.jpg), or the `::screen::` slot for content drawn
@@ -32,7 +33,7 @@ const active = computed(() => $nav.value.currentSlideNo === $page.value)
     :style="{ '--shot-focus': props.focus }"
   >
     <div class="frame">
-      <img v-if="image" class="photo" :src="image" alt="">
+      <img v-if="image" class="photo" :src="withBase(image)" alt="">
       <slot name="screen" />
     </div>
     <i class="shade" />
