@@ -2,13 +2,15 @@
 // Profile card for a package, a maintainer, an account…
 // <SubjectCard header="Sujet 01 / 18" name="debug" meta="v4.4.2 — 08 sept. 2025"
 //   :fields="[{ label: 'Source', value: 'jeton npm (hameçonné)', alert: true }]" />
-// The #mugshot slot replaces the default package icon (e.g. with an <img>).
+// `logo` (image URL, e.g. /logos/axios.png from public/) fills the avatar box; the #mugshot slot
+// replaces the default package icon with anything else.
 // `compact` shrinks paddings and type, for a card sharing the slide with large visuals.
 withDefaults(defineProps<{
   header?: string
   flag?: string
   name: string
   meta?: string
+  logo?: string
   fields?: { label: string, value: string, alert?: boolean }[]
   compact?: boolean
 }>(), {
@@ -29,7 +31,8 @@ withDefaults(defineProps<{
         <div class="identity">
           <div class="mugshot">
             <slot name="mugshot">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" aria-hidden="true">
+              <img v-if="logo" :src="logo" alt="">
+              <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" aria-hidden="true">
                 <path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.730zm1 .27V12" />
                 <path d="M3.29 7L12 12l8.71-5M7.5 4.27l9 5.15" />
               </svg>
@@ -121,6 +124,7 @@ withDefaults(defineProps<{
   height: 80px;
 }
 
+.mugshot img,
 .mugshot :slotted(img) {
   width: 100%;
   height: 100%;

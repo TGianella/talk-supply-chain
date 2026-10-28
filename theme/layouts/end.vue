@@ -7,24 +7,43 @@ import Stamp from '../components/Stamp.vue'
 
 // Closing slide. Title (h1) and subtitle (p) in the default slot.
 // `contacts` is a label → value map, e.g. { Slides: 'example.com', Contact: '@handle' }.
-withDefaults(defineProps<{
+// `qrcodes` puts large QR codes at the center of the slide, in place of the fingerprint and the stamp, with the
+// title shrunk and centered above them: { label, url, img }, the image of the code from public/ (without `img`,
+// a placeholder square).
+const props = withDefaults(defineProps<{
   status?: string
   kicker?: string
   stamp?: string
   contacts?: Record<string, string>
+  qrcodes?: { label: string, url?: string, img?: string }[]
 }>(), {
   status: 'Statut : ouvert',
   kicker: 'En attente de témoignages',
   stamp: 'Non résolu',
   contacts: () => ({}),
+  qrcodes: () => [],
 })
 </script>
 
 <template>
-  <div class="slidev-layout hud end">
+  <div class="slidev-layout hud end" :data-qr="props.qrcodes.length ? '' : undefined">
     <HudFrame :status="status" />
-    <Fingerprint class="print" />
-    <Stamp v-if="stamp" class="stamp">{{ stamp }}</Stamp>
+    <div v-if="props.qrcodes.length" class="qrcodes">
+      <figure v-for="q in props.qrcodes" :key="q.label" class="qrcode">
+        <div class="code">
+          <img v-if="q.img" :src="q.img" :alt="q.label">
+          <span v-else class="placeholder">QR</span>
+        </div>
+        <figcaption>
+          <span class="label">{{ q.label }}</span>
+          <span v-if="q.url">{{ q.url }}</span>
+        </figcaption>
+      </figure>
+    </div>
+    <template v-else>
+      <Fingerprint class="print" />
+      <Stamp v-if="stamp" class="stamp">{{ stamp }}</Stamp>
+    </template>
     <HudCorners class="title">
       <Kicker v-if="kicker">{{ kicker }}</Kicker>
       <slot />
@@ -50,6 +69,94 @@ withDefaults(defineProps<{
     position: absolute;
     left: 1360px;
     top: 470px;
+  }
+
+  /* with QR codes: the title, smaller, centered at the top, the codes centered under it */
+  &[data-qr] .title {
+    left: 50%;
+    top: 130px;
+    width: auto;
+    padding: 28px 56px;
+    transform: translateX(-50%);
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  &[data-qr] h1 {
+    font-size: 96px;
+    margin-bottom: 16px;
+  }
+
+  &[data-qr] h1:last-child {
+    margin-bottom: 0;
+  }
+
+  /* QR codes alone: no empty title box, the codes centered vertically in the space under the status bar */
+  &[data-qr] .title:not(:has(h1, p, .hud-kicker)) {
+    display: none;
+  }
+
+  &[data-qr]:not(:has(.title :is(h1, p, .hud-kicker))) .qrcodes {
+    top: 50%;
+    transform: translateY(calc(-50% + var(--hud-statusbar) / 2));
+  }
+
+  .qrcodes {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 450px;
+    display: flex;
+    justify-content: center;
+    gap: 240px;
+  }
+
+  .qrcode {
+    width: 520px;
+    margin: 0;
+  }
+
+  .qrcode .code {
+    aspect-ratio: 1;
+    padding: 24px;
+    background: var(--hud-surface);
+    box-shadow: inset 0 0 0 3px var(--hud-ink);
+  }
+
+  .qrcode img {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .qrcode .placeholder {
+    display: grid;
+    place-items: center;
+    height: 100%;
+    background: repeating-linear-gradient(45deg, var(--hud-grid) 0 2px, transparent 2px 14px);
+    font-family: var(--hud-font-mono);
+    font-weight: 600;
+    font-size: 56px;
+    letter-spacing: 0.1em;
+    color: var(--hud-muted);
+  }
+
+  .qrcode figcaption {
+    margin-top: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--hud-font-mono);
+    font-weight: 600;
+    font-size: 40px;
+  }
+
+  .qrcode figcaption .label {
+    font-size: 30px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--hud-muted);
   }
 
   .title {

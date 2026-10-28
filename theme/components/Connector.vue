@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 
-// Right-angled line between two elements of the same slide, found by CSS selector.
+// Right-angled line between two elements of the same slide, found by CSS selector, from the middle of
+// a side of each (`fromSide`, `toSide`).
 // With v-click, the line draws itself from `from` to `to` when it appears.
 // <Connector v-click from=".machine" to=".bug" />
 // Elements meant to show up once the line is drawn take the `after-draw` class.
@@ -16,12 +17,14 @@ const props = withDefaults(defineProps<{
   color?: string
   width?: number
   duration?: number // drawing time, in ms
+  delay?: number // wait before drawing, in ms
 }>(), {
   fromSide: 'bottom',
   toSide: 'top',
   color: 'var(--hud-ink)',
   width: 3,
   duration: 900,
+  delay: 0,
 })
 
 const root = ref<HTMLElement>()
@@ -49,10 +52,14 @@ function update() {
   const local = ([x, y]: number[]) => [(x - box.left) / scale, (y - box.top) / scale]
   const [x1, y1] = local(anchor(a.getBoundingClientRect(), props.fromSide))
   const [x2, y2] = local(anchor(b.getBoundingClientRect(), props.toSide))
-  const vertical = props.fromSide === 'top' || props.fromSide === 'bottom'
-  d.value = vertical
-    ? `M${x1} ${y1}V${(y1 + y2) / 2}H${x2}V${y2}`
-    : `M${x1} ${y1}H${(x1 + x2) / 2}V${y2}H${x2}`
+  const vertical = (side: Side) => side === 'top' || side === 'bottom'
+  // same axis at both ends: two bends at mid-way; different axes: one bend
+  if (vertical(props.fromSide) !== vertical(props.toSide))
+    d.value = vertical(props.fromSide) ? `M${x1} ${y1}V${y2}H${x2}` : `M${x1} ${y1}H${x2}V${y2}`
+  else
+    d.value = vertical(props.fromSide)
+      ? `M${x1} ${y1}V${(y1 + y2) / 2}H${x2}V${y2}`
+      : `M${x1} ${y1}H${(x1 + x2) / 2}V${y2}H${x2}`
 }
 
 let observer: ResizeObserver | undefined
@@ -74,7 +81,7 @@ onBeforeUnmount(() => observer?.disconnect())
 </script>
 
 <template>
-  <div ref="root" class="hud-connector" :style="{ '--draw-duration': `${duration}ms` }">
+  <div ref="root" class="hud-connector" :style="{ '--draw-duration': `${duration}ms`, '--draw-delay': `${delay}ms` }">
     <svg fill="none">
       <path :d="d" pathLength="1" :stroke="color" :stroke-width="width" />
     </svg>
@@ -102,11 +109,12 @@ onBeforeUnmount(() => observer?.disconnect())
 path {
   stroke-dasharray: 1;
   stroke-dashoffset: 0;
-  transition: stroke-dashoffset var(--draw-duration) ease-in-out;
+  transition: stroke-dashoffset var(--draw-duration) ease-in-out var(--draw-delay);
 }
 
 .slidev-vclick-hidden path {
   stroke-dashoffset: 1;
   transition-duration: 0s;
+  transition-delay: 0s;
 }
 </style>

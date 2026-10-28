@@ -1,7 +1,11 @@
 ---
 theme: ./theme
 title: Catalogue du thème Dossier
-layout: scene-cover
+layout: cover
+meta:
+  Lieu: registry.npmjs.org
+  Heure: 08/09/2025 · 13:16 UTC
+  Pièce: '001'
 themeConfig:
   dossier: Dossier 0908
   speaker: Théo Gianella
@@ -10,6 +14,8 @@ themeConfig:
   city: '[Ville]'
   date: '[Date du talk]'
   parts: [Contexte, Patient zéro, Propagation, Défense]
+  defenses: [Mainteneurs, GitHub, Registres, Package managers, Devs]
+  platforms: [GitHub, npm]
 transition: slide-left
 mdc: true
 ---
@@ -19,7 +25,7 @@ mdc: true
 analyse d’une scène de crime
 
 <!--
-Layout `scene-cover`. Props : meta { libellé: valeur } (par défaut : themeConfig.event, date), speaker, org (par défaut : themeConfig.speaker, org), marker (numéro ou false), titleStyle (glow : machine à écrire avec lueur verte, par défaut | plain : mono et sous-titre jaune).
+Layout `cover` avec meta { libellé: valeur }, affiché en bas à droite à la place du readout.
 -->
 
 ---
@@ -35,115 +41,16 @@ Ce fichier n'existe pas encore : la slide reste noire.
 -->
 
 ---
-layout: scene-credits
-shot: investigator
+layout: scene-shot
+image: /photos/intro-email.jpg
+place: Boîte de réception
+time: 08/09/2025
+credit: 'Photo : Mohammad Rahmani / Unsplash'
+transition: fade
 ---
 
 <!--
-Layout `scene-credits`, générique d'ouverture en trois plans. Props : shot (investigator | title | venue).
-Plan investigator : role, name (par défaut themeConfig.speaker), portrait (image dans public/, affichée en noir et blanc).
--->
-
----
-layout: scene-credits
-shot: title
----
-
-# node_modules
-
-analyse d’une scène de crime
-
-<!--
-Plan title : titre (h1) et sous-titre (p) centrés.
--->
-
----
-layout: scene-credits
-shot: venue
----
-
-<!--
-Plan venue : label, event, city, date (par défaut themeConfig.event, city, date).
--->
-
----
-layout: scene-investigator
-handle: '@pseudo'
-badge:
-  Nom: Gianella
-  Prénom: Théo
-  Unité: Zenika
-  Grade: '[rôle]'
----
-
-# Théo Gianella
-
-[rôle] · Zenika
-
-- [expérience ou rôle actuel]
-- [projet, communauté ou sujet]
-- [pourquoi ce sujet vous concerne]
-
-<!--
-Layout `scene-investigator`. Props : kicker, photo (chemin dans public/), badge { libellé: valeur }, handle.
--->
-
----
-layout: scene-section
-part: 2
----
-
-# Patient zéro
-
-L’e-mail qui a tout déclenché
-
-<!--
-Layout `scene-section`. Props : part (index dans themeConfig.parts, numérote le marqueur), kicker.
--->
-
----
-layout: scene-evidence
-kicker: Pièce 003
-marker: 3
----
-
-# Trouvé sur place
-
-Un script d’installation de trois lignes. Direction le labo.
-
-::evidence::
-
-<EvidenceSheet title="package.json" :alert="[5]">
-
-```json
-{
-  "name": "debug",
-  "version": "4.4.2",
-  "scripts": {
-    "postinstall": "node bundle.js"
-  }
-}
-```
-
-</EvidenceSheet>
-
-<!--
-Layout `scene-evidence`. Props : kicker, marker, scale. Slot ::evidence:: : l'objet posé dans le faisceau.
-Composant <EvidenceSheet> : title, alert (lignes en rouge), rotate, width.
--->
-
----
-layout: scene
----
-
-<Tape class="absolute" style="left: -100px; top: 200px" :rotate="-6" />
-<EvidenceMarker class="absolute" style="left: 1400px; top: 500px" :number="7" />
-<Schematic type="molecule" class="absolute" style="left: 140px; top: 520px" :opacity="0.5" />
-<ForensicScale class="absolute" style="left: 1320px; top: 860px" />
-
-<!--
-Layout `scene` : fond photo (photo: beam | outline | none), contenu placé librement.
-Composants de scène : <Tape text rotate width>, <EvidenceMarker number size>, <Schematic type="molecule|geometry|table" opacity rows>, <ForensicScale width rotate>, <InvestigatorBadge>, <EvidenceSheet>.
+Layout `scene-shot`, plan plein écran en noir et blanc pour une séquence d'ouverture façon série policière. Props : image (dans public/, ou à la place le slot `::screen::`, zoomé comme la photo, par exemple pour PublishLog), place et time (incrustation en bas à gauche, qui apparaît peu après la slide), credit, zoom (in | out : zoom lent pendant que la slide est affichée), focus (point central du cadrage et du zoom, object-position CSS). Le slot par défaut se place librement sur la photo.
 -->
 
 ---
@@ -156,7 +63,21 @@ Retracer les compromissions de 2025 jusqu’à leur source
 
 <!--
 Layout `cover` (variante labo).
-Props : status, kicker, speaker, org, minutiae (true | false | liste de libellés), readout (texte | false), readoutValue, readoutRatio.
+Props : status, kicker, speakerLabel (kicker de la plaque orateur, Enquêteur par défaut), speaker, org, meta { libellé: valeur } (en bas à droite, à la place du readout), minutiae (true | false | liste de libellés), readout (texte | false), readoutValue, readoutRatio.
+-->
+
+---
+layout: investigator
+fields:
+  Unité: Zenika
+  Fonction: '[rôle]'
+  Affaire en cours: '[projet en cours]'
+---
+
+# Théo Gianella
+
+<!--
+Layout `investigator`, présentation de l’orateur avec son portrait. Props : status, kicker, fields { libellé: valeur }, photo (chemin dans public/).
 -->
 
 ---
@@ -179,13 +100,12 @@ Listes à puces, listes numérotées, `code` en ligne, **gras** et <mark> sont s
 ---
 layout: section
 part: 2
-target: Patient zéro
 ---
 
 # L’e-mail d’hameçonnage
 
 <!--
-Layout `section`. Props : part (index dans themeConfig.parts), kicker, target, status.
+Layout `section`. Props : part (index dans themeConfig.parts : grand numéro, étape courante de l’agenda), kicker, status.
 La barre d'agenda vient de themeConfig.parts.
 -->
 
@@ -257,7 +177,7 @@ Le tarball publié ne correspond à aucun commit, tag ou build CI. Seul le regis
 <!--
 Layout `two-cols`. Props : cols (colonnes CSS grid), align, status.
 Slot par défaut : titre. Slots ::left:: et ::right::.
-Composants : <SubjectCard> (prop compact pour une version réduite), <Verdict>.
+Composants : <SubjectCard> (prop compact pour une version réduite, logo : URL d’une image pour la case avatar, ex. /logos/chalk.png), <Verdict>.
 -->
 
 ---
@@ -316,9 +236,9 @@ if (code) eval(code)
 </AppWindow>
 
 <!--
-Layout `case` : une attaque sur une slide. Props : kicker, subject (props de <SubjectCard>, affichée compacte),
+Layout `case` : une attaque sur une slide. Props : kicker, subject (props de <SubjectCard>, affichée compacte, logo compris),
 modusLabel (« Mode opératoire » par défaut), modus [{ label, value, alert, at, clicks }], timeline [{ date, label, hot }], cols, status, reveal.
-reveal (numéro de clic) : la carte apparaît à ce clic, la frise et le titre de la colonne de droite au suivant ; puis chaque ligne
+reveal (numéro de clic) : la carte, la frise et le titre de la colonne de droite apparaissent à ce clic ; puis chaque ligne
 de modus est une étape : un clic met en avant ses dates sur la frise (at : une date ou une liste, écrites comme dans timeline,
 entre guillemets), un clic ouvre sa fenêtre (slot ::window-n::, n = rang de la ligne à partir de 1), un clic la ferme et affiche la ligne.
 Sans at ou sans fenêtre, l'étape saute ce clic. Sans reveal, tout est affiché d'emblée.
@@ -436,6 +356,65 @@ Composant <Protocol>. Props : id, code (ou slot #code).
 -->
 
 ---
+layout: defense
+actor: 2
+---
+
+# GitHub
+
+<v-clicks>
+
+- **Des permissions minimales**
+- **Épingler les actions par commit**
+- **Isoler le cache de la release**
+
+</v-clicks>
+
+<!--
+Layout `defense`. Props : actor (index dans la série), series (clé de themeConfig qui liste les acteurs, defenses par défaut),
+label (préfixe du kicker, Défense par défaut), kicker, status (Protocole par défaut).
+La chaîne d'acteurs en haut à droite vient de cette clé ; ex. series: platforms, label: Plateforme.
+Chaque élément de liste est une mesure en gras, numérotée M-01, M-02…, centrée sous le titre. Une ligne d'explication sous le gras est possible. Entourer la liste de <v-clicks> pour l'échelonner.
+-->
+
+---
+layout: cards
+status: Plateformes
+actor: 1
+cards:
+  - { date: Août 2025, label: Premier changement }
+  - { date: Nov. 2025, label: Deuxième changement, img: /photos/logicielle-acces.jpg }
+  - { date: Déc. 2025, label: Troisième changement }
+  - { date: 2026, label: Quatrième changement }
+  - { date: 2026, label: Cinquième changement }
+---
+
+# GitHub
+
+::window-1::
+
+<AppWindow title="github.blog · changelog" class="w-[1200px]">
+  <img src="/photos/logicielle-acces.jpg" class="block w-full h-[600px] object-cover" />
+</AppWindow>
+
+::window-2::
+
+<AppWindow title="github.blog · changelog" class="w-[1200px]">
+  <img src="/photos/logicielle-acces.jpg" class="block w-full h-[600px] object-cover" />
+</AppWindow>
+
+<!--
+Layout `cards`. Props : cards [{ label, date, img, position, clicks }], actor, series (platforms par défaut),
+label (préfixe du kicker, Plateforme par défaut), kicker, status, reveal (1 par défaut, false : tout affiché).
+2 à 5 cartes sur deux rangées : deux par rangée jusqu'à quatre (plus grandes), 3 + 2 pour cinq.
+Slot ::window-n:: : la carte n est d'abord présentée dans cette fenêtre (un clic l'ouvre, le suivant
+la fait voler sur sa carte). Sans fenêtre, la carte apparaît sur un clic.
+Plus de fenêtres pour la carte n dans ::window-n-2::, ::window-n-3::…, chacune ouverte au clic qui ferme la précédente ;
+la dernière vole sur la carte. `clicks` (un nombre, ou un par fenêtre) garde les fenêtres ouvertes pour autant de clics de plus, pour un schéma par étapes
+(inject('case-window-at'), comme dans le layout case ; ex. <TokenLifespan />). Slot ::thumb-n:: : la vignette de la carte n.
+-->
+
+---
 status: Boîte à outils
 ---
 
@@ -471,7 +450,8 @@ const pkg = await fetch(url)
 </div>
 
 <!--
-<Kicker>, <Tag variant="accent|ink|outline">, <Redact reveal?>, <Readout>, <Segments>, <Stamp rotate size>, <HudCorners>, <Fingerprint>, <Crosshair>.
+<Kicker>, <Tag variant="accent|ink|outline">, <Redact reveal?>, <Readout>, <Segments>, <Stamp rotate size>, <HudCorners lock?>, <Fingerprint size tone scan minutiae loop?>, <Crosshair>.
+Écran d’attente de la couverture : <Fingerprint loop> (balayage, marqueurs) et <HudCorners lock> (verrouillage du cadre), chacun sur son propre cycle.
 Classes utilitaires : hud-label, hud-accent, hud-muted, hud-head, hud-mono.
 Transition : classe open-center sur un élément v-click encadré (carte, image), il s’ouvre depuis le centre comme une fenêtre et se referme à l’inverse. Variable --enter-delay sur l’élément : retarde son apparition (par exemple pour laisser un autre élément se refermer d’abord).
 -->
@@ -493,8 +473,8 @@ status: Pièces à conviction
 </div>
 
 <!--
-Composant <Connector>. Props : from, to (sélecteurs CSS dans la slide), fromSide, toSide (top|bottom|left|right, bas → haut par défaut), color, width, duration (ms).
-Ligne à angles droits, en surimpression : elle ne prend pas de place dans la mise en page.
+Composant <Connector>. Props : from, to (sélecteurs CSS dans la slide), fromSide, toSide (top|bottom|left|right, bas → haut par défaut), color, width, duration (ms), delay (ms, attente avant le tracé).
+Ligne à angles droits, en surimpression : elle ne prend pas de place dans la mise en page. Côtés sur le même axe : deux coudes à mi-chemin ; sur des axes différents (bas → gauche…) : un seul coude.
 Avec v-click, la ligne se dessine de from vers to. Classe after-draw : l'élément se dévoile de haut en bas au même clic, une fois la ligne dessinée (délai réglable par --after-draw-delay).
 -->
 
@@ -510,20 +490,21 @@ contacts:
 Questions, pistes et contre-arguments bienvenus
 
 <!--
-Layout `end`. Props : kicker, stamp, contacts { libellé: valeur }, status.
+Layout `end`. Props : kicker, stamp, contacts { libellé: valeur }, qrcodes [{ label, url, img }], status.
 -->
 
 ---
-layout: scene-end
-contacts:
-  Slides: exemple.fr/supply-chain
-  Contact: '@pseudo'
+layout: end
+qrcodes:
+  - { label: Votre avis, url: exemple.fr/avis }
+  - { label: Site, url: exemple.fr }
 ---
 
-# Affaire classée ?
+# Merci
 
 Questions, pistes et contre-arguments bienvenus
 
 <!--
-Layout `scene-end`. Props : kicker, contacts { libellé: valeur }.
+Layout `end` avec qrcodes : de grands QR codes au centre, sous le titre réduit, à la place de l'empreinte et du tampon ; img est l'image du code
+dans public/ (sans img, un carré de remplacement).
 -->

@@ -267,3 +267,8 @@
     --open-y 0.18s ease-in,
     --open-x 0.2s ease-out 0.16s;
 }
+
+/* With v-click: appears once an open-center window hidden on the same click has closed */
+.after-close.slidev-vclick-target:not(.slidev-vclick-hidden) {
+  transition-delay: 0.4s;
+}

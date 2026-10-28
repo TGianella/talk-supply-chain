@@ -8,10 +8,14 @@ import Kicker from '../components/Kicker.vue'
 import Readout from '../components/Readout.vue'
 
 // Title (h1) and subtitle (p) in the default slot.
-// Speaker and org default to themeConfig.speaker / themeConfig.org.
+// Speaker plate at the bottom left: `speakerLabel` (kicker), speaker and org (default to
+// themeConfig.speaker / themeConfig.org).
+// `meta` (label → value) is shown at the bottom right, in place of the readout.
 const props = withDefaults(defineProps<{
   status?: string
+  meta?: Record<string, string>
   kicker?: string
+  speakerLabel?: string
   speaker?: string
   org?: string
   minutiae?: boolean | string[]
@@ -20,7 +24,7 @@ const props = withDefaults(defineProps<{
   readoutRatio?: number
 }>(), {
   status: 'Analyse en cours',
-  kicker: 'Sujet identifié',
+  speakerLabel: 'Enquêteur',
   minutiae: true,
   readout: 'Minuties concordantes',
   readoutValue: '14 / 16',
@@ -35,18 +39,24 @@ const org = computed(() => props.org ?? $slidev?.themeConfigs?.org)
 <template>
   <div class="slidev-layout hud cover">
     <HudFrame :status="status" />
-    <Fingerprint class="print" scan :minutiae="minutiae" />
-    <span class="coord" style="left: 120px">X 0120  Y 0260</span>
-    <span class="coord" style="left: 1180px">ZOOM 4.0×</span>
-    <HudCorners class="title">
+    <Fingerprint class="print" scan loop :minutiae="minutiae" />
+    <HudCorners class="title" lock>
+      <span class="coord" style="left: 0">X 0120  Y 0320</span>
+      <span class="coord" style="right: 0">ZOOM 4.0×</span>
       <Kicker v-if="kicker">{{ kicker }}</Kicker>
       <slot />
     </HudCorners>
-    <div class="meta">
-      <span v-if="speaker" class="speaker">{{ speaker }}</span>
-      <span v-if="org" class="org">{{ org }}</span>
+    <div v-if="speaker || org" class="plate">
+      <Kicker v-if="speakerLabel">{{ speakerLabel }}</Kicker>
+      <div v-if="speaker" class="speaker">{{ speaker }}</div>
+      <div v-if="org" class="org">{{ org }}</div>
     </div>
-    <div v-if="readout" class="readout">
+    <div v-if="meta" class="facts">
+      <template v-for="(v, k) in meta" :key="k">
+        <span class="k">{{ k }}</span><span>{{ v }}</span>
+      </template>
+    </div>
+    <div v-else-if="readout" class="readout">
       <Readout :label="readout" :ratio="readoutRatio" :total="16" accent>
         <span class="readout-value">{{ readoutValue }}</span>
       </Readout>
@@ -59,12 +69,13 @@ const org = computed(() => props.org ?? $slidev?.themeConfigs?.org)
   .print {
     position: absolute;
     left: 1180px;
-    top: 180px;
+    top: 130px;
   }
 
+  /* labels above the corners of the title box */
   .coord {
     position: absolute;
-    top: 226px;
+    top: -42px;
     font-family: var(--hud-font-mono);
     font-size: 18px;
     letter-spacing: 0.1em;
@@ -75,39 +86,68 @@ const org = computed(() => props.org ?? $slidev?.themeConfigs?.org)
   .title {
     position: absolute;
     left: 120px;
-    top: 260px;
-    width: 1180px;
+    top: 320px;
+    width: fit-content;
+    max-width: 1060px;
   }
 
   h1 {
-    font-size: 112px;
+    font-size: 144px;
     line-height: 1;
     margin: 0 0 28px;
   }
 
   .title p {
-    font-size: 34px;
+    font-size: 48px;
     color: var(--hud-muted);
     margin: 0;
   }
 
-  .meta {
+  /* bottom aligned with the facts on the right */
+  .plate {
     position: absolute;
-    left: 168px;
-    top: 900px;
-    display: flex;
-    gap: 48px;
-    font-family: var(--hud-font-mono);
-    font-size: 24px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
+    left: 120px;
+    bottom: 75px;
+  }
+
+  .plate .hud-kicker {
+    font-size: 22px;
+    margin-bottom: 10px;
   }
 
   .speaker {
-    font-weight: 600;
+    font-family: var(--hud-font-head);
+    font-weight: 700;
+    font-size: 64px;
+    line-height: 1;
   }
 
   .org {
+    margin-top: 10px;
+    font-family: var(--hud-font-mono);
+    font-weight: 600;
+    font-size: 26px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--hud-muted);
+  }
+
+  .facts {
+    position: absolute;
+    left: 1380px;
+    top: 900px;
+    display: grid;
+    grid-template-columns: auto auto;
+    column-gap: 40px;
+    row-gap: 8px;
+    font-family: var(--hud-font-mono);
+    font-weight: 600;
+    font-size: 22px;
+    letter-spacing: 0.1em;
+  }
+
+  .facts .k {
+    text-transform: uppercase;
     color: var(--hud-muted);
   }
 

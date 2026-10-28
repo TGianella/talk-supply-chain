@@ -4,15 +4,17 @@
 // run in one area or the other:
 // - click 1: `pull_request`, on the fork's side: the PR's version of the workflow, a read-only token, no secrets;
 // - click 2: `pull_request_target`, inside the main repository: the target branch's version of the workflow,
-//   a token that can write and the secrets, while the PR's title and code come in from the fork.
+//   a token that can write. The repository's secrets
+//   stay out of reach: a run only gets the secrets its workflow names, and nx's title check named none.
 // With `chain`, both runs are shown at once (pull_request dimmed) and the clicks play the nx attack:
 // - click 1: the PR title is executed in the pull_request_target run;
-// - click 2: its token triggers the publish workflow on the attacker's commit, which sends the npm token out.
+// - click 2: its token triggers the publish workflow on the attacker's commit, which gets the npm token from the
+//   secrets and sends it out.
 // Steps count from the click that opened its window in the case layout (two `clicks` on that modus row),
 // or from `at`. <PwnRequest /> then <PwnRequest chain />
 import type { Ref } from 'vue'
 import { useSlideContext } from '@slidev/client'
-import { computed, inject, useId } from 'vue'
+import { computed, inject } from 'vue'
 
 const props = withDefaults(defineProps<{
   chain?: boolean
@@ -42,11 +44,12 @@ const cardRow = (c: { y: number }, i: number) => c.y + HB + 36 + i * 44
 // runs
 const RY = 360
 const safe = { x: 60, y: RY, w: 360, h: 210, title: 'on: pull_request' }
-const target = { x: 540, y: RY, w: 460, h: 250, title: 'on: pull_request_target' }
+// three rows like the pull_request run, a fourth with the chain
+const target = { x: 540, y: RY, w: 460, h: props.chain ? 256 : 210, title: 'on: pull_request_target' }
 const publish = { x: 1060, y: RY, w: 280, h: 160, title: 'publish.yml' }
 const runRow = (i: number) => RY + HB + 36 + i * 46
 const safeRows = [['token', 'lecture seule'], ['secrets', 'aucun'], ['workflow', 'celui de la PR']]
-const targetRows = [['token', 'lecture + écriture'], ['secrets', 'accessibles'], ['workflow', 'de la branche cible']]
+const targetRows = [['token', 'lecture + écriture'], ['secrets', 'aucun'], ['workflow', 'de la branche cible']]
 
 const right = (x: number, y: number) => `${x},${y} ${x - 18},${y - 10} ${x - 18},${y + 10}`
 const down = (x: number, y: number) => `${x},${y} ${x - 10},${y - 18} ${x + 10},${y - 18}`
@@ -56,13 +59,8 @@ const PY = fork.y + (HB + fork.h) / 2
 // each run triggered from its side
 const fx = fork.x + fork.w / 2
 const mx = main.x + main.w / 2
-// the secrets, reaching the pull_request_target run
+// the secrets, reaching only the publish workflow of the chain
 const sx = secrets.x + secrets.w / 2
-const SY = 300
-const tx = target.x + target.w - 40
-// the title of the PR, from the fork into the pull_request_target run
-const DY = runRow(0) - 6
-const data = `M${fork.x + fork.w} ${fork.y + fork.h - 25}H480V${DY}H${target.x - 16}`
 // the chain: from the run to the publish workflow, then out to the webhook, below the areas
 const CY = runRow(0) - 6
 const hook = { x: 1080, y: 680, w: 240, h: 60 }
@@ -72,8 +70,6 @@ const H = props.chain ? 760 : 660
 // hidden until its step; the delay orders what a step shows
 const off = (on: boolean) => on ? undefined : ''
 const d = (s: number) => ({ '--d': `${s}s` })
-// the dashed title line draws through a mask, its dashes taking the stroke-dasharray
-const titleMask = `pwn-title-${useId()}`
 </script>
 
 <template>
@@ -97,7 +93,6 @@ const titleMask = `pwn-title-${useId()}`
     <text :x="main.x + 20" :y="cardRow(main, 0)" class="value" dominant-baseline="middle">.github/workflows/</text>
     <text :x="main.x + 20" :y="cardRow(main, 1)" class="value" dominant-baseline="middle">code de l’équipe</text>
     <text :x="secrets.x + 20" :y="cardRow(secrets, 0)" class="value" dominant-baseline="middle">NPM_TOKEN</text>
-    <text :x="secrets.x + 20" :y="cardRow(secrets, 1)" class="value" dominant-baseline="middle">token en écriture</text>
     <rect v-for="c in [fork, main, secrets]" :key="`o${c.title}`" :x="c.x" :y="c.y" :width="c.w" :height="c.h" class="outline" />
 
     <path :d="`M${fork.x + fork.w} ${PY}H${main.x - 16}`" class="line" />
@@ -121,20 +116,11 @@ const titleMask = `pwn-title-${useId()}`
       </g>
     </g>
 
-    <!-- click 2: pull_request_target, inside the main repository, with the secrets and the PR's title -->
-    <mask :id="titleMask" maskUnits="userSpaceOnUse" x="0" y="0" width="1400" :height="H">
-      <path :d="data" pathLength="1" class="reveal draw" :data-off="off(shown(2))" :style="d(0.3)" />
-    </mask>
+    <!-- click 2: pull_request_target, inside the main repository, with a write token -->
     <g>
       <path :d="`M${mx} ${main.y + main.h}V${target.y - 16}`" pathLength="1" class="line draw" :data-off="off(shown(2))" />
       <polygon :points="down(mx, target.y - 2)" class="ink pop" :data-off="off(shown(2))" :style="d(0.45)" />
       <text :x="mx + 14" y="300" class="note pop" :data-off="off(shown(2))" :style="d(0.3)">déclenche</text>
-      <path :d="`M${sx} ${secrets.y + secrets.h}V${SY}H${tx}V${target.y - 16}`" pathLength="1" class="line hot-line draw" :data-off="off(shown(2))" :style="d(0.3)" />
-      <polygon :points="down(tx, target.y - 2)" class="accent pop" :data-off="off(shown(2))" :style="d(0.75)" />
-      <text :x="sx - 14" :y="SY - 14" class="note hot pop" text-anchor="end" :data-off="off(shown(2))" :style="d(0.5)">accès aux secrets</text>
-      <path :d="data" class="line hot-line dashed" :mask="`url(#${titleMask})`" />
-      <polygon :points="right(target.x - 2, DY)" class="accent pop" :data-off="off(shown(2))" :style="d(0.75)" />
-      <text x="466" y="330" class="note hot halo pop" text-anchor="end" :data-off="off(shown(2))" :style="d(0.5)">titre de la PR</text>
 
       <g class="pop" :data-off="off(shown(2))" :style="d(0.8)">
         <rect :x="target.x - 1.5" :y="target.y - 1.5" :width="target.w + 3" :height="target.h + 3" class="card" />
@@ -142,7 +128,7 @@ const titleMask = `pwn-title-${useId()}`
         <text :x="target.x + 20" :y="target.y + HB / 2 + 1" class="bar-title" dominant-baseline="middle">{{ target.title }}</text>
         <g v-for="([l, v], i) in targetRows" :key="l">
           <text :x="target.x + 20" :y="runRow(i)" class="label" dominant-baseline="middle">{{ l }}</text>
-          <text :x="target.x + 150" :y="runRow(i)" class="value" :class="{ hot: i < 2 }" dominant-baseline="middle">{{ v }}</text>
+          <text :x="target.x + 150" :y="runRow(i)" class="value" :class="{ hot: i === 0 }" dominant-baseline="middle">{{ v }}</text>
         </g>
         <!-- chain, click 1: the title is executed -->
         <g class="pop" :data-off="off(played(1))" :style="d(0)">
@@ -153,8 +139,11 @@ const titleMask = `pwn-title-${useId()}`
       </g>
     </g>
 
-    <!-- chain, click 2: the publish workflow, triggered with the token, sends the npm token out -->
+    <!-- chain, click 2: the publish workflow, triggered with the token, gets the npm token from the secrets
+         and sends it out -->
     <g v-if="chain">
+      <path :d="`M${sx} ${secrets.y + secrets.h}V${publish.y - 16}`" pathLength="1" class="line hot-line draw" :data-off="off(played(2))" :style="d(0.5)" />
+      <polygon :points="down(sx, publish.y - 2)" class="accent pop" :data-off="off(played(2))" :style="d(0.95)" />
       <path :d="`M${target.x + target.w} ${CY}H${publish.x - 16}`" pathLength="1" class="line hot-line draw" :data-off="off(played(2))" />
       <polygon :points="right(publish.x - 2, CY)" class="accent pop" :data-off="off(played(2))" :style="d(0.45)" />
       <g class="pop" :data-off="off(played(2))" :style="d(0.5)">
@@ -315,12 +304,6 @@ const titleMask = `pwn-title-${useId()}`
 .draw[data-off] {
   stroke-dashoffset: 1;
   transition: none;
-}
-
-/* the mask of the dashed line: a solid stroke, wide enough to cover the dashes and their corners */
-.reveal {
-  stroke: white;
-  stroke-width: 12;
 }
 
 .pop {

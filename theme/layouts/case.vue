@@ -9,8 +9,8 @@ import SubjectCard from '../components/SubjectCard.vue'
 // the package card on the left, the "mode opératoire" on the right, a short timeline at the bottom.
 // `subject` takes the props of <SubjectCard> (shown compact); ::subject:: and ::modus:: replace
 // the card and the right column.
-// `reveal` (a click number) shows the card at that click, the timeline and the heading of the right
-// column at the next one; then each row of `modus` is a step of its own:
+// `reveal` (a click number) shows the card, the timeline and the heading of the right column at that click;
+// then each row of `modus` is a step of its own:
 //   - a click focuses its dates on the timeline (`at`: one date or a list, as written in `timeline`),
 //   - a click opens its window, the content of the slot ::window-<n>:: (n: position of the row, from 1);
 //     more windows in ::window-<n>-2::, ::window-<n>-3::… each open at the click that closes the previous,
@@ -34,6 +34,7 @@ const props = withDefaults(defineProps<{
     flag?: string
     name: string
     meta?: string
+    logo?: string
     fields?: { label: string, value: string, alert?: boolean }[]
   }
   modusLabel?: string
@@ -52,8 +53,7 @@ const slots = useSlots()
 const { $clicks } = useSlideContext()
 
 const start = computed(() => props.reveal === false ? false : +props.reveal)
-const atSubject = computed(() => start.value)
-const atTimeline = computed(() => start.value === false ? false : start.value + 1)
+const atStart = computed(() => start.value)
 
 // slots of the windows of step n: window-n, then window-n-2, window-n-3… while they exist
 function windowSlots(n: number) {
@@ -66,7 +66,7 @@ function windowSlots(n: number) {
 // clicks of each step: focus of its dates, its windows [open, close] one after the other (each opens
 // at the click that closes the previous one), its row (false: no such click)
 const steps = computed(() => {
-  let c = start.value === false ? 0 : start.value + 2
+  let c = start.value === false ? 0 : start.value + 1
   return props.modus.map((m, i) => {
     const dates = m.at == null ? [] : [m.at].flat().map(String)
     if (start.value === false)
@@ -135,7 +135,7 @@ watch($clicks, measure, { flush: 'post' })
       </header>
       <div class="content">
         <div class="cols" :style="{ gridTemplateColumns: cols }">
-          <div v-click="atSubject" class="col">
+          <div v-click="atStart" class="col">
             <slot name="subject">
               <SubjectCard v-if="subject" v-bind="subject" compact />
             </slot>
@@ -143,7 +143,7 @@ watch($clicks, measure, { flush: 'post' })
           <div class="col">
             <slot name="modus">
               <template v-if="modus.length">
-                <Kicker v-click="atTimeline">{{ modusLabel }}</Kicker>
+                <Kicker v-click="atStart">{{ modusLabel }}</Kicker>
                 <div
                   v-for="(m, i) in modus"
                   :key="`${m.label}-${steps[i].row}`"
@@ -160,7 +160,7 @@ watch($clicks, measure, { flush: 'post' })
             </slot>
           </div>
         </div>
-        <div v-if="timeline.length" v-click="atTimeline" class="timeline" :data-focusing="focused.length ? '' : undefined">
+        <div v-if="timeline.length" v-click="atStart" class="timeline" :data-focusing="focused.length ? '' : undefined">
           <div
             v-for="t in timeline"
             :key="t.date"

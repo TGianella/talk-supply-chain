@@ -11,20 +11,15 @@
   --hud-surface: #ffffff;
   --hud-code: #f3f6f9; /* code blocks: a shade below the surface, above the slide background */
 
-  /* Scene (dark) variant */
+  /* Dark variant (scene-shot) */
   --scene-bg: #121314;
   --scene-chalk: #f2f1ec;
   --scene-chalk-muted: #a7abb0;
   --scene-tape: #ffd21f;
-  --scene-tape-ink: #111111;
-  --scene-glow: #2bff6e; /* phosphor green around the typewriter title */
-  --scene-glow-deep: #1fd85c;
 
   --hud-font-head: 'Chakra Petch', 'IBM Plex Sans', sans-serif;
   --hud-font-body: 'IBM Plex Sans', system-ui, sans-serif;
   --hud-font-mono: 'IBM Plex Mono', ui-monospace, monospace;
-  --hud-font-tape: 'Anton', 'Impact', sans-serif;
-  --hud-font-typewriter: 'Courier Prime', 'Courier New', monospace;
 
   /* Slide geometry, on the 1920×1080 canvas */
   --hud-statusbar: 64px;

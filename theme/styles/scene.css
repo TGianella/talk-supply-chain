@@ -1,5 +1,5 @@
-/* Scene variant: dark crime-scene slides (cover, sections, evidence, intro, closing).
-   Layouts carry both classes, `hud scene`, so they share the base typography. */
+/* Dark variant, used only by the scene-shot layout (opening sequence).
+   The layout carries both classes, `hud scene`, so it shares the base typography. */
 .slidev-layout.hud.scene {
   background: var(--scene-bg);
   color: var(--scene-chalk);
@@ -39,15 +39,4 @@
     box-shadow: inset 0 0 0 2px #ffffff26;
     color: var(--scene-chalk);
   }
-}
-
-/* Mono label in tape yellow, without the ">" prompt used in the lab */
-.scene-kicker {
-  font-family: var(--hud-font-mono);
-  font-weight: 600;
-  font-size: 28px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--scene-tape);
-  margin-bottom: 24px;
 }
