@@ -2,20 +2,37 @@
 import { useSlideContext } from '@slidev/client'
 import { computed } from 'vue'
 
-// Status bar shared by every layout: "<dossier> // <status>" on the left,
-// slide counter on the right. The dossier comes from `themeConfig.dossier`.
+// Status bar shared by every layout: "<dossier> // <part> // <status>" on the left,
+// slide counter on the right. The dossier comes from `themeConfig.dossier`; the part is the one of the
+// last section slide up to this one (its `part` in themeConfig.parts), none before the first section
+// or with `no-part` (closing slide).
 const props = defineProps<{
   status?: string
+  noPart?: boolean
 }>()
 
 const { $slidev, $page, $nav } = useSlideContext()
 
-const left = computed(() => {
-  const dossier = $slidev?.themeConfigs?.dossier as string | undefined
-  return [dossier, props.status].filter(Boolean).join('  //  ')
+const pad = (n: number) => String(n).padStart(2, '0')
+
+const part = computed(() => {
+  if (props.noPart)
+    return undefined
+  const parts = ($slidev?.themeConfigs?.parts ?? []) as unknown as string[]
+  for (let i = $page.value - 1; i >= 0; i--) {
+    const fm = $nav.value.slides[i]?.meta.slide.frontmatter
+    if (fm?.layout === 'section' && fm.part) {
+      const n = Number(fm.part)
+      return [`Partie ${pad(n)}`, parts[n - 1]].filter(Boolean).join(' · ')
+    }
+  }
+  return undefined
 })
 
-const pad = (n: number) => String(n).padStart(2, '0')
+const left = computed(() => {
+  const dossier = $slidev?.themeConfigs?.dossier as string | undefined
+  return [dossier, part.value, props.status].filter(Boolean).join('  //  ')
+})
 
 // Background grid, drawn as SVG lines rather than a repeating CSS gradient:
 // once Slidev scales the canvas down, gradient lines snap to whole pixels and

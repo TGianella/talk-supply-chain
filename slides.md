@@ -79,8 +79,8 @@ transition: fade
 ---
 layout: scene-shot
 image: /photos/intro-serveurs.jpg
-credit: 'Photo : İsmail Enes Ayhan / Unsplash'
-focus: 50% 45%
+credit: 'Photo : Domaintechnik / Unsplash'
+focus: 55% 50%
 transition: fade
 ---
 
@@ -343,40 +343,16 @@ Historiquement, la vulnérabilité est plutôt vue comme venant de failles de s�
 
 # Des attaques de plus en plus fréquentes
 
-<div class="relative flex-1">
+<div class="flex flex-1 items-center justify-center">
   <ChartWindow
     v-click
-    class="open-center absolute left-0 top-0 w-[1000px]"
+    class="open-center w-[1440px]"
     title="Attaques open source recensées depuis 2015, en cumul"
     source="Source : Sonatype, State of the Software Supply Chain 2020 (2015 à mai 2020) et 2026 (2021–2025), « Next generation software supply chain attacks »"
     type="line"
     :data="[[2015, 20], [2017, 63], [2018, 142], [2019, 380], [2020, 1152], [2021, 12000], [2022, 89000], [2023, 245032], [2024, 704102], [2025, 1233219]]"
     :max="1400000" :step="200000"
     :rescale="{ until: 2020, max: 1200, step: 200 }"
-  />
-  <ChartWindow
-    v-click
-    class="open-center absolute left-[620px] top-[220px] w-[960px]"
-    title="Organisations touchées via un fournisseur, par an"
-    source="Source : Identity Theft Resource Center, rapports annuels 2023 et 2025 (violations de données notifiées aux États-Unis)"
-    :data="[[2018, 101], [2019, 232], [2020, 694], [2021, 558], [2022, 1748], [2023, 2767], [2024, 660], [2025, 1252]]"
-    :max="3000" :step="1000"
-  />
-  <ChartWindow
-    v-click
-    class="open-center absolute left-[1180px] top-0 w-[480px]"
-    title="Organisations par attaque"
-    source="Source : Identity Theft Resource Center"
-    figure="9,4"
-    caption="touchées en moyenne par chaque attaque en 2025, contre 1,2 en 2018"
-  />
-  <ChartWindow
-    v-click
-    class="open-center absolute left-[80px] top-[320px] w-[520px]"
-    title="Violations impliquant un tiers"
-    source="Source : Verizon, DBIR 2025"
-    figure="30 %"
-    caption="des violations de données, deux fois plus que l'année précédente"
   />
 </div>
 
@@ -859,18 +835,18 @@ echo "Validating PR title: $(echo "You've been compromised")"
 ::window-2::
 
 <AppWindow title="Exécution d'un workflow absent de master" class="w-[1600px]">
-  <StaleBranch branch="fix/typo" :pauses="[0, 2, 3]" />
+  <StaleBranch branch="fix/typo" :pauses="[0, 0, 1]" />
   <WindowStep :at="[1, 2]">
     <AppWindow title="github.com/nrwl/nx/pull/32458" class="w-[900px]">
       <img src="./assets/nx-pr-32458.png" class="block w-full p-[3px] pt-[12px]" />
     </AppWindow>
   </WindowStep>
-  <WindowStep :at="[4, 5]">
+  <WindowStep :at="[2, 3]">
     <AppWindow title="x.com/adnanthekhan" class="w-[900px]">
       <img src="./assets/nx-adnan-khan-x.png" class="block w-full p-[3px] pt-[8px]" />
     </AppWindow>
   </WindowStep>
-  <WindowStep :at="[6, 7]">
+  <WindowStep :at="[4, 5]">
     <AppWindow title="github.com/nrwl/nx/pull/32486" class="w-[900px]">
       <img src="./assets/nx-pr-32486.png" class="block w-full p-[3px] pt-[12px]" />
     </AppWindow>
@@ -1437,7 +1413,7 @@ status: Plateformes
 actor: 2
 cards:
   - { date: 2025, label: 'Des tokens de plus en plus restreints', clicks: [3, 3, 2] }
-  - { label: 'Staged publishing : un humain valide la publication', clicks: 3 }
+  - { date: Mai 2026, label: 'Staged publishing : un humain valide la publication', clicks: 3 }
   - { label: 'Sécurité des comptes renforcée', clicks: 3 }
 ---
 
@@ -1465,11 +1441,19 @@ cards:
   <BypassTokens />
 </AppWindow>
 
+::thumb-1::
+
+<img src="./assets/npm-classic-tokens.png" class="block w-full h-full object-cover object-[center_28%]" />
+
 ::window-2::
 
 <AppWindow title="Staged publishing">
   <StagedPublishing />
 </AppWindow>
+
+::thumb-2::
+
+<img src="./assets/npm-staged-publishing.png" class="block w-full h-full object-cover object-[center_28%]" />
 
 ::window-3::
 
@@ -1477,6 +1461,10 @@ cards:
 <AppWindow title="Sécurité des comptes npm">
   <AccountSecurity />
 </AppWindow>
+
+::thumb-3::
+
+<img src="./assets/npm-auth-changes.png" class="block w-full h-full object-cover object-[center_28%]" />
 
 ---
 layout: cards
@@ -1498,12 +1486,24 @@ cards:
   <ReleaseCooldown />
 </AppWindow>
 
+::thumb-1::
+
+<img src="./assets/pnpm-10-16.png" class="block w-full h-full object-cover object-[center_28%]" />
+
 ::window-2::
 
 <!-- to check: the Bun version (single source), the Yarn default, and the name of the npm 12 key in package.json -->
 <AppWindow title="Scripts d’installation">
   <InstallScripts />
 </AppWindow>
+
+::thumb-2::
+
+<img src="./assets/npm-12-install-time.png" class="block w-full h-full object-cover object-[center_28%]" />
+
+::thumb-3::
+
+<img src="./assets/pnpm-11.png" class="block w-full h-full object-cover object-[center_28%]" />
 
 ---
 layout: section
@@ -1551,6 +1551,29 @@ actor: 1
 ---
 layout: defense
 actor: 2
+---
+
+# Devs
+
+<ul>
+  <li v-click="1"><strong>Mettre à jour son package manager</strong>et activer ses nouvelles options de sécurité</li>
+  <li v-click="2"><strong>Réduire sa surface d’attaque</strong>faire le tri dans ses dépendances</li>
+  <li v-click="5" class="after-close"><strong>Tout code installé est un risque</strong>dépendances, extensions d’IDE, outils d’IA…</li>
+</ul>
+
+<!-- screenshots: knip.dev, e18e.dev -->
+<div class="absolute inset-0 grid place-items-center pointer-events-none">
+  <AppWindow v-click="[3, 5]" class="open-center col-start-1 row-start-1 -translate-x-[260px] -translate-y-[90px]" title="knip.dev · dépendances inutilisées">
+    <img src="./assets/knip.png" class="block h-[480px] p-[3px] pt-0" />
+  </AppWindow>
+  <AppWindow v-click="[4, 5]" class="open-center col-start-1 row-start-1 translate-x-[260px] translate-y-[150px]" title="e18e.dev · alternatives plus légères">
+    <img src="./assets/e18e.png" class="block h-[480px] p-[3px] pt-0" />
+  </AppWindow>
+</div>
+
+---
+layout: defense
+actor: 2
 clicks: 8
 ---
 
@@ -1560,7 +1583,7 @@ clicks: 8
   <div v-click.hide="6" class="col-start-1 row-start-1 grid place-items-center">
     <DevTradeoffs />
   </div>
-  <ul class="col-start-1 row-start-1">
+  <ul class="col-start-1 row-start-1" style="counter-reset: hud-defense 3">
     <li v-click="6"><strong><code>npm ci</code> en CI</strong>n’installe que ce que fige le lockfile, jamais de nouvelle version</li>
     <li v-click="7"><strong>Régénérer le lockfile avec prudence</strong>le supprimer met à jour toutes les dépendances d’un coup</li>
     <li v-click="8"><strong>Relire le lockfile dans les PR</strong>une version ou une URL changée change le code installé</li>
@@ -1571,8 +1594,6 @@ clicks: 8
 layout: end
 kicker: ''
 qrcodes:
-  - { label: Votre avis, url: exemple.fr/avis }
-  - { label: Site, url: exemple.fr }
+  - { label: Feedback, img: /qr/feedback.png }
+  - { label: Ressources, img: /qr/site-perso.png }
 ---
-
-<!-- placeholders: put the QR code images in public/ and set `img` on each (e.g. img: /qr/avis.png), with the real urls -->

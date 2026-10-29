@@ -5,8 +5,8 @@ import HudFrame from '../components/HudFrame.vue'
 import Kicker from '../components/Kicker.vue'
 
 // Section break. Title (h1) in the default slot.
-// `part` is the 1-based index in themeConfig.parts: it sets the kicker, the status,
-// the large number behind the title and the current step of the agenda.
+// `part` is the 1-based index in themeConfig.parts: it sets the kicker, the part in the status bar
+// of this slide and the next ones, the large number behind the title and the current step of the agenda.
 const props = defineProps<{
   status?: string
   part?: number
@@ -17,7 +17,6 @@ const { $slidev } = useSlideContext()
 const parts = computed(() => ($slidev?.themeConfigs?.parts ?? []) as unknown as string[])
 const pad = (n: number) => String(n).padStart(2, '0')
 const kicker = computed(() => props.kicker ?? (props.part ? `Partie ${pad(props.part)}` : undefined))
-const status = computed(() => props.status ?? kicker.value)
 </script>
 
 <template>

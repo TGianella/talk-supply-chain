@@ -4,6 +4,7 @@ import Fingerprint from '../components/Fingerprint.vue'
 import HudFrame from '../components/HudFrame.vue'
 import Kicker from '../components/Kicker.vue'
 import Stamp from '../components/Stamp.vue'
+import { useSlideContext } from '@slidev/client'
 import { withBase } from '../utils/base'
 
 // Closing slide. Title (h1) and subtitle (p) in the default slot.
@@ -24,13 +25,17 @@ const props = withDefaults(defineProps<{
   contacts: () => ({}),
   qrcodes: () => [],
 })
+
+// the QR codes open like windows when the slide is entered, only in the slideshow and the presenter
+const { $renderContext } = useSlideContext()
+const live = $renderContext.value === 'slide' || $renderContext.value === 'presenter'
 </script>
 
 <template>
   <div class="slidev-layout hud end" :data-qr="props.qrcodes.length ? '' : undefined">
-    <HudFrame :status="status" />
-    <div v-if="props.qrcodes.length" class="qrcodes">
-      <figure v-for="q in props.qrcodes" :key="q.label" class="qrcode">
+    <HudFrame :status="status" no-part />
+    <div v-if="props.qrcodes.length" class="qrcodes" :data-live="live ? '' : undefined">
+      <figure v-for="(q, i) in props.qrcodes" :key="q.label" class="qrcode" :style="{ '--i': i }">
         <div class="code">
           <img v-if="q.img" :src="withBase(q.img)" :alt="q.label">
           <span v-else class="placeholder">QR</span>
@@ -124,6 +129,20 @@ const props = withDefaults(defineProps<{
     box-shadow: inset 0 0 0 3px var(--hud-ink);
   }
 
+  /* the window opening of open-center (base.css), as animations: a hidden slide is display: none,
+     and an animation plays again each time it shows. Starts once the slide transition is over */
+  .qrcodes[data-live] .code {
+    clip-path: inset(var(--open-y) var(--open-x));
+    animation:
+      qr-open-x 0.22s ease-in calc(0.4s + var(--i) * 0.15s) both,
+      qr-open-y 0.3s ease-out calc(0.6s + var(--i) * 0.15s) both;
+  }
+
+  /* the label once its code is open */
+  .qrcodes[data-live] figcaption {
+    animation: qr-label 0.3s ease-out calc(0.9s + var(--i) * 0.15s) both;
+  }
+
   .qrcode img {
     display: block;
     width: 100%;
@@ -204,5 +223,19 @@ const props = withDefaults(defineProps<{
     color: var(--hud-muted);
     align-self: center;
   }
+}
+
+@keyframes qr-open-x {
+  from { --open-x: 50%; }
+  to { --open-x: 0%; }
+}
+
+@keyframes qr-open-y {
+  from { --open-y: 49%; }
+  to { --open-y: 0%; }
+}
+
+@keyframes qr-label {
+  from { opacity: 0; }
 }
 </style>

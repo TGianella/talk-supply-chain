@@ -4,15 +4,15 @@
 // Two areas, as in <PwnRequest>: the main repository, with master (ending with whether the vulnerable
 // workflow is on it) and the older branch as lines of commits, and below it the attacker's fork. The older
 // branch ends at its last commit, the one it points to, which still has the workflow:
-// - click 1: the older branch, forked from the commit adding the workflow;
-// - click 2: the older branch is merged into master, but not deleted: it can still be a pull request target;
-// - click 3: the revert on master, whose workflow goes away; the older branch keeps it;
+// - click 1: the revert on master, whose workflow goes away;
+// - click 2: the older branch, forked from the commit adding the workflow, before the revert: it keeps it;
+// - click 3: the older branch is merged into master, but not deleted: it can still be a pull request target;
 // - click 4: the attacker's fork;
 // - click 5: the attacker opens a pull request from the fork against the older branch, and its workflow runs.
 // Steps count from the click that opened its window in the case layout (`clicks: [5]` on that modus row),
 // or from `at`. `pauses` leaves a click free after each of these steps, for a <WindowStep> over the diagram
-// (two more `clicks`): with `:pauses="[0, 3]"`, a window shows at step 1, the branch comes at step 2, and
-// another window at step 5, after the revert. <StaleBranch />
+// (two more `clicks`): with `:pauses="[0, 3]"`, a window shows at step 1, the revert comes at step 2, and
+// another window at step 5, after the merge. A step repeated leaves several free clicks after it. <StaleBranch />
 import type { Ref } from 'vue'
 import { useSlideContext } from '@slidev/client'
 import { computed, inject } from 'vue'
@@ -34,9 +34,9 @@ const step = computed(() => {
   const raw = $clicks.value - (props.at ?? opened?.value ?? 0)
   return raw - pauses.filter((p, i) => raw >= p + 1 + i).length
 })
-const branched = computed(() => step.value >= 1)
-const merged = computed(() => step.value >= 2)
-const reverted = computed(() => step.value >= 3)
+const reverted = computed(() => step.value >= 1)
+const branched = computed(() => step.value >= 2)
+const merged = computed(() => step.value >= 3)
 const forked = computed(() => step.value >= 4)
 const attacked = computed(() => step.value >= 5)
 
@@ -50,10 +50,10 @@ const MY = 130
 const BY = 250
 const FY = 550
 const M = 22 // commit side
-// commits on master: the workflow added (the fork point of the older branch), its merge, the revert
-const added = 480
-const merge = 760
-const revert = 900
+// commits on master: the workflow added (the fork point of the older branch), the revert, the merge
+const added = 420
+const revert = 800
+const merge = 940
 // the commit the older branch points to; it is merged into master, then the pull request aims at it
 const tip = (added + merge) / 2
 // the attacker's commits; the pull request leaves from the last one, under the older branch's commit
@@ -66,7 +66,7 @@ const run = { x: 1070, y: 290, w: 280, h: 90 }
 const RY = run.y + run.h / 2
 
 // master's last commit so far, which its tag follows
-const head = computed(() => reverted.value ? revert : merged.value ? merge : added)
+const head = computed(() => merged.value ? merge : reverted.value ? revert : added)
 // a segment of master between two commits, from edge to edge
 const seg = (a: number, b: number) => `M${a + M / 2} ${MY}H${b - M / 2}`
 // hidden until its step; the delay orders what a step shows
@@ -86,20 +86,20 @@ const HB = 38
     <rect :x="added - M / 2" :y="MY - M / 2" :width="M" :height="M" class="commit hot" />
     <text :x="added" :y="MY - 34" class="note hot" text-anchor="middle">21.08 · workflow ajouté</text>
 
-    <!-- click 1: the older branch, forked from the commit adding the workflow, down to the commit it points to -->
+    <!-- click 2: the older branch, forked from the commit adding the workflow, down to the commit it points to -->
     <text x="50" :y="BY" class="lane pop" dominant-baseline="middle" :data-off="off(branched)">{{ branch }}</text>
     <path :d="`M${added} ${MY + M / 2}V${BY}H${tip - M / 2}`" pathLength="1" class="line draw" :data-off="off(branched)" />
     <rect :x="tip - M / 2" :y="BY - M / 2" :width="M" :height="M" class="commit pop" :data-off="off(branched)" :style="d(0.4)" />
     <text :x="tip - M / 2 - 4" :y="BY + 38" class="note hot pop" text-anchor="end" :data-off="off(branched)" :style="d(0.5)">workflow vulnérable</text>
 
-    <!-- click 2: the older branch merged into master (master goes on to the merge commit), and still there -->
+    <!-- click 3: the older branch merged into master (master goes on to the merge commit), and still there -->
     <path :d="`M${tip + M / 2} ${BY}H${merge}V${MY + M / 2}`" pathLength="1" class="line draw" :data-off="off(merged)" />
-    <path :d="seg(added, merge)" pathLength="1" class="line draw" :data-off="off(merged)" />
+    <path :d="seg(revert, merge)" pathLength="1" class="line draw" :data-off="off(merged)" />
     <rect :x="merge - M / 2" :y="MY - M / 2" :width="M" :height="M" class="commit pop" :data-off="off(merged)" :style="d(0.4)" />
     <text :x="merge + 16" :y="BY - 44" class="note pop" :data-off="off(merged)" :style="d(0.5)">fusionnée, non supprimée</text>
 
-    <!-- click 3: the revert on master -->
-    <path :d="seg(merge, revert)" pathLength="1" class="line draw" :data-off="off(reverted)" />
+    <!-- click 1: the revert on master -->
+    <path :d="seg(added, revert)" pathLength="1" class="line draw" :data-off="off(reverted)" />
     <rect :x="revert - M / 2" :y="MY - M / 2" :width="M" :height="M" class="commit pop" :data-off="off(reverted)" :style="d(0.4)" />
     <text :x="revert" :y="MY - 34" class="note pop" text-anchor="middle" :data-off="off(reverted)" :style="d(0.4)">22.08 · workflow retiré</text>
 
